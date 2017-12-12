@@ -66,10 +66,10 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
     private int forcedStart = 0;
     private ArrayList<DomCard> boughtCards = new ArrayList<DomCard>();
     private int actionsplayed;
-    private ArrayList<DomCardName> forbiddenCardsToBuy = new ArrayList<DomCardName>();
+    protected ArrayList<DomCardName> forbiddenCardsToBuy = new ArrayList<DomCardName>();
     private boolean extraOutpostTurn;
     private ArrayList<DomPlayer> possessionTurns = new ArrayList<DomPlayer>();
-    DomPlayer possessor;
+    protected DomPlayer possessor;
     private ArrayList<DomCardName> cardsGainedLastTurn = new ArrayList<DomCardName>();
     public int sameCardCount = 0;
     public DomCardName previousPlayedCardName = null;
@@ -83,7 +83,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
     private StartState myStartState = null;
     private ArrayList<DomCardName> mySuggestedBoardCards = new ArrayList<DomCardName>();
     private DomCardName myBaneCard;
-    private int coinTokens;
+    protected int coinTokens;
     private boolean journeyTokenIsFaceUp;
     private ArrayList<DomCard> tavernMat = new ArrayList<DomCard>();
     private boolean minusOneCardToken;
@@ -108,14 +108,14 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
     private boolean hasDoubledMoney;
     private int charmReminder = 0;
     private ArrayList<DomCard> mySetAsideEncampments = new ArrayList<DomCard>();
-    private boolean donateTriggered;
+    protected boolean donateTriggered;
     private int mountainPassBid = 0;
     private DomCardName obeliskChoice = null;
     private boolean villaTriggered = false;
     private int merchantsPlayed;
     private int drawDeckSize;
     private DomCard savedCard;
-    private boolean isHuman;
+    protected boolean isHuman;
     private DomEngine myEngine;
     private char[] tavernMatAsString;
     private ArrayList<DomCard> beginningOfTurnTriggers=new ArrayList<DomCard>();
@@ -338,11 +338,11 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
         return getCardsInHand().size() >= 6 || getCardsFromHand(DomCardName.Curse).size() >= 2 || !getCardsFromHand(DomCardType.Attack).isEmpty();
     }
 
-    private DomCost getAvailableCurrencyWithoutTokens() {
+    protected DomCost getAvailableCurrencyWithoutTokens() {
         return getTotalAvailableCurrency().add(new DomCost(-coinTokens, 0));
     }
 
-    private boolean checkIfWantsToHoardCoinTokens() {
+    protected boolean checkIfWantsToHoardCoinTokens() {
         if (!stillInEarlyGame() && !isGoingToBuyTopCardInBuyRules(getTotalAvailableCurrency()) && countInDeck(DomCardName.Duchy) == 0)
             return true;
         return false;
@@ -486,13 +486,13 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
         getCurrentGame().setPreviousTurnTakenBy(this);
     }
 
-    private void handleDelayedBoons() {
+    protected void handleDelayedBoons() {
         while (!delayedBoons.isEmpty()) {
             receiveBoon(delayedBoons.remove(0));
         }
     }
 
-    private void doNightPhase() {
+    protected void doNightPhase() {
         setPhase(DomPhase.Night);
         DomCard theCardToPlay = null;
         do {
@@ -503,7 +503,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
         } while (theCardToPlay != null);
     }
 
-    private void handleTransmogrify() {
+    protected void handleTransmogrify() {
         DomCard theTransmogrify = getFromTavernMat(DomCardName.Transmogrify);
         while (theTransmogrify != null && ((TransmogrifyCard) theTransmogrify).wantsToBeCalled()) {
             getCardsInPlay().add(removeFromTavernMat(theTransmogrify));
@@ -513,7 +513,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
         }
     }
 
-    private void resolveRatcatchers() {
+    protected void resolveRatcatchers() {
         DomCard theRatcatcher = getFromTavernMat(DomCardName.Ratcatcher);
         while (theRatcatcher != null && ((RatcatcherCard) theRatcatcher).wantsToBeCalled()) {
             getCardsInPlay().add(removeFromTavernMat(theRatcatcher));
@@ -523,7 +523,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
         }
     }
 
-    private void handleGuides() {
+    protected void handleGuides() {
         DomCard theGuide = getFromTavernMat(DomCardName.Guide);
         while (theGuide != null && ((GuideCard) theGuide).wantsToBeCalled()) {
             getCardsInPlay().add(removeFromTavernMat(theGuide));
@@ -533,7 +533,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
         }
     }
 
-    private void handleTeachers() {
+    protected void handleTeachers() {
         DomCard theTeacher = getFromTavernMat(DomCardName.Teacher);
         while (theTeacher != null) {
             getCardsInPlay().add(removeFromTavernMat(theTeacher));
@@ -543,7 +543,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
         }
     }
 
-    private void doCleanUpPhase() {
+    protected void doCleanUpPhase() {
         setPhase(DomPhase.CleanUp);
         while (!boons.isEmpty()) {
             getCurrentGame().getBoard().returnBoon(boons.remove(0));
@@ -597,7 +597,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
         getCurrentGame().resetFaceDownCards();
     }
 
-    private void resolveHorseTraders() {
+    protected void resolveHorseTraders() {
         if (horseTradersPile.isEmpty())
             return;
         if (DomEngine.haveToLog)
@@ -624,7 +624,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
     /**
      *
      */
-    private void resolveDurationEffects() {
+    protected void resolveDurationEffects() {
         ArrayList<DomCard> theDurations = new ArrayList<DomCard>();
         for (DomCard aCard : getCardsInPlay()) {
             if (aCard.hasCardType(DomCardType.Duration) && aCard.hasCardType(DomCardType.Card_Advantage)) {
@@ -777,7 +777,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
         buyTime += System.currentTimeMillis() - theTime;
     }
 
-    private boolean isInBuyRules(DomCardName aCard) {
+    protected boolean isInBuyRules(DomCardName aCard) {
         for (DomBuyRule theBuyRule : getBuyRules()) {
             if (theBuyRule.getCardToBuy() == aCard)
                 return true;
@@ -785,7 +785,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
         return false;
     }
 
-    private void playTreasures() {
+    protected void playTreasures() {
         DomCard theCardToPlay;
         do {
             theCardToPlay = null;
@@ -803,7 +803,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
         } while (theCardToPlay != null);
     }
 
-    private void handleWineMerchants() {
+    protected void handleWineMerchants() {
         if (availableCoins >= 2) {
             while (getFromTavernMat(DomCardName.Wine_Merchant) != null) {
                 DomCard theCard = getFromTavernMat(DomCardName.Wine_Merchant);
@@ -1278,7 +1278,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
         }
     }
 
-    private void resolvePrincedCards() {
+    protected void resolvePrincedCards() {
         Collections.sort(princedCards, DomCard.SORT_FOR_PLAYING);
         for (DomCard theCard : princedCards) {
             if (DomEngine.haveToLog)
@@ -3275,7 +3275,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
         cardsToSummon.add(domCard);
     }
 
-    private void resolveCardsToSummon() {
+    protected void resolveCardsToSummon() {
         for (DomCard theCard : cardsToSummon) {
             if (DomEngine.haveToLog) DomEngine.addToLog(name + " plays Summoned cards");
             play(theCard);

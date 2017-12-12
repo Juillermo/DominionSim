@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Observable;
 
 import be.aga.dominionSimulator.DomBoard;
+import be.aga.dominionSimulator.DomCost;
 import be.aga.dominionSimulator.DomEngine;
 import be.aga.dominionSimulator.DomGame;
 import be.aga.dominionSimulator.DomPlayer;
@@ -71,6 +72,10 @@ public class AIDomGame extends DomGame {
 		}
 		setChanged();
 		notifyObservers();
+	}
+	
+	private void setPlayers(ArrayList<AIDomPlayer> newPlayers){
+		players = newPlayers;
 	}
 
 }
