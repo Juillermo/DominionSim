@@ -173,7 +173,6 @@ public class DomBuyConditionPanel extends JPanel implements ItemListener {
         add(myRightTypeBox, theCons);
 	}
 	
-		@Override
 		public void itemStateChanged(ItemEvent e) {
 			if (e.getSource()==myLeftFunctionBox) {
 				myLeftCardBox.setVisible(false);

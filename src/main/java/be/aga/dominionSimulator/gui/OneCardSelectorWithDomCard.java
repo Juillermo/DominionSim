@@ -110,7 +110,6 @@ public class OneCardSelectorWithDomCard extends JDialog implements ActionListene
         return myChooseFromList;
     }
 
-    @Override
     public void actionPerformed(ActionEvent e) {
         if (myButtonMessage.equals("Mandatory!"))
             return;

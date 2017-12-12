@@ -425,8 +425,7 @@ public class DomBotEditor extends EscapeDialog implements ActionListener {
 		return thePane;
 	}
 
-    @Override
-	public void actionPerformed(ActionEvent aE) {
+    public void actionPerformed(ActionEvent aE) {
       if (aE.getActionCommand().equals( "StartStateInfo" )) {
     	  String theText= "<html><u>This tab allows defining a forced starting state (instead of starting with 7 Coppers and 3 Estates)</u>"
         		+"<br>Use the correct spelling for cards and capitals where needed (and no ending 's' for multiples)!"

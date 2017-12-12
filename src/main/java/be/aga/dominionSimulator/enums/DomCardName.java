@@ -436,7 +436,6 @@ public enum DomCardName  {
     ;
 
     public static final Comparator SORT_FOR_TRASHING = new Comparator<DomCardName>(){
-        @Override
         public int compare( DomCardName aO1, DomCardName aO2 ) {
             if (aO1.getTrashPriority()< aO2.getTrashPriority())
                 return -1;

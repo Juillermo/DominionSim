@@ -87,7 +87,6 @@ private JPanel getSelectionPanel() {
     return thePanel;
 }
 
-@Override
 public void actionPerformed(ActionEvent e) {
 	if (e.getActionCommand().equals("Cancel")){
 		dispose();
@@ -101,7 +100,6 @@ public void actionPerformed(ActionEvent e) {
 	}
 }
 
-@Override
 public void valueChanged(ListSelectionEvent e) {
 	// TODO Auto-generated method stub
 	

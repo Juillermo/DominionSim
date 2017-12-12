@@ -137,7 +137,6 @@ public class DomBuyRulePanel extends JPanel implements ActionListener, ItemListe
       return thePanel;
     }
 	
-	@Override
 	public void actionPerformed(ActionEvent aE) {
       if (aE.getActionCommand().equals( "Delete" )) {
        	 JButton theButton = (JButton) aE.getSource();
@@ -200,7 +199,6 @@ public class DomBuyRulePanel extends JPanel implements ActionListener, ItemListe
 		return theRule;
 	}
 
-	@Override
 	public void itemStateChanged(ItemEvent e) {
 		myPlayStrategyBox.removeAllItems();
 		DomCardName theSelectedCardName = (DomCardName)myCardToBuyBox.getSelectedItem();

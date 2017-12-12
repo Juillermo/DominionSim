@@ -9,7 +9,6 @@ import java.awt.*;
 
 public class CardRenderer extends JLabel implements ListCellRenderer {
 
-    @Override
     public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
         if (value instanceof String) {
             setText("<html><i>nothing</i></html>");

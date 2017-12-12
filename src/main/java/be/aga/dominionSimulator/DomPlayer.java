@@ -99,12 +99,12 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
     private int expeditionsActivated;
     private DomCardName minus$2TokenOn;
     private DomCard estateTokenOn;
-    private int coinTokensToAdd;
+    protected int coinTokensToAdd;
     private boolean extraMissionTurn;
     private DomCardName plusOneCoinTokenOn;
     private DomCardName trashingTokenOn;
     private int bridgesPlayedCount;
-    private int debt;
+    protected int debt;
     private boolean hasDoubledMoney;
     private int charmReminder = 0;
     private ArrayList<DomCard> mySetAsideEncampments = new ArrayList<DomCard>();
@@ -244,7 +244,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
         buysLeft = 0;
     }
 
-    private DomCost determineCostAndCheckSplitPiles(DomBuyRule theBuyRule) {
+    protected DomCost determineCostAndCheckSplitPiles(DomBuyRule theBuyRule) {
       return determineCostAndCheckSplitPiles(theBuyRule.getCardToBuy());
     }
 
@@ -313,7 +313,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
         return theCost;
     }
 
-    private boolean wantsEvent(DomCardName cardToBuy) {
+    protected boolean wantsEvent(DomCardName cardToBuy) {
         if (cardToBuy == DomCardName.Pilgrimage && pilgrimageActivatedThisTurn)
             return false;
         if (cardToBuy == DomCardName.Alms && (almsActivated || countInPlay(DomCardType.Treasure) > 0))
@@ -919,7 +919,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
         return true;
     }
 
-    private void resolveEvent(DomCardName aCardName) {
+    protected void resolveEvent(DomCardName aCardName) {
         if (DomEngine.haveToLog) DomEngine.addToLog(this + " buys event: " + aCardName.toHTML());
         DomCard theCard = aCardName.createNewCardInstance();
         theCard.owner = getPossessor() == null ? this : getPossessor();
@@ -2728,7 +2728,6 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
     /* (non-Javadoc)
      * @see java.lang.Comparable#compareTo(java.lang.Object)
      */
-    @Override
     public int compareTo(DomPlayer aO) {
         return toString().compareTo(aO.toString());
     }

@@ -69,7 +69,6 @@ private JPanel getButtonPanel() {
 	return thePanel;
 }
 
-@Override
 public void actionPerformed(ActionEvent e) {
         for (String theOption:myChooseFrom) {
             if (e.getActionCommand().equals(theOption)) {

@@ -111,7 +111,6 @@ private JList getChooseFromList() {
     return myChooseFromList;
 }
 
-@Override
 public void actionPerformed(ActionEvent e) {
         if (myButtonMessage.equals("Mandatory!"))
             return;

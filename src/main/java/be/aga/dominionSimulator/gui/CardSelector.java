@@ -170,7 +170,6 @@ private JList getChosenList() {
     return myChosenList;
 }
 
-@Override
 public void actionPerformed(ActionEvent e) {
 	if (e.getActionCommand().equals("OK")){
 	    if (myNumber!=0 && myChosenList.getModel().getSize()!=myNumber)

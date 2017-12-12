@@ -17,21 +17,18 @@ public class DomCard implements Comparable< DomCard >{
 	private boolean discardAtCleanUp=true;
 
     public static final Comparator SORT_BY_NAME = new Comparator<DomCard>(){
-        @Override
         public int compare( DomCard aO1, DomCard aO2 ) {
             return aO1.getName().compareTo(aO2.getName());
         }
     };
 
     public static final Comparator SORT_BY_COST = new Comparator<DomCard>(){
-        @Override
         public int compare( DomCard aO1, DomCard aO2 ) {
             return aO1.getName().getCost().compareTo(aO2.getName().getCost());
         }
     };
 
     public static final Comparator SORT_FOR_TRASHING = new Comparator<DomCard>(){
-        @Override
         public int compare( DomCard aO1, DomCard aO2 ) {
             if (aO1.getTrashPriority()< aO2.getTrashPriority())
                 return -1;
@@ -42,7 +39,6 @@ public class DomCard implements Comparable< DomCard >{
       };
 
       public static final Comparator SORT_FOR_PLAYING = new Comparator<DomCard>(){
-          @Override
           public int compare( DomCard aO1, DomCard aO2 ) {
               if (aO1.getPlayPriority()< aO2.getPlayPriority())
                   return -1;
@@ -53,7 +49,6 @@ public class DomCard implements Comparable< DomCard >{
         };
 
       public static final Comparator SORT_FOR_DISCARDING = new Comparator<DomCard>(){
-          @Override
           public int compare( DomCard aO1, DomCard aO2 ) {
               if (aO1.getDiscardPriority(1)< aO2.getDiscardPriority(1))
                   return -1;
@@ -64,7 +59,6 @@ public class DomCard implements Comparable< DomCard >{
         };
 
         public static final Comparator SORT_FOR_DISCARD_FROM_HAND = new Comparator<DomCard>(){
-            @Override
             public int compare( DomCard aO1, DomCard aO2 ) {
                 int theActionsLeft = aO1.owner.getActionsLeft();
                 if (aO1.getDiscardPriority(theActionsLeft)< aO2.getDiscardPriority(theActionsLeft))
@@ -111,7 +105,6 @@ public class DomCard implements Comparable< DomCard >{
     /* (non-Javadoc)
      * @see java.lang.Comparable#compareTo(java.lang.Object)
      */
-    @Override
     public int compareTo( DomCard aO ) {
         if (getName().getCoinValue()< aO.getName().getCoinValue())
             return 1;

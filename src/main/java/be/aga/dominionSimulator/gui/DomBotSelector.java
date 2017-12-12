@@ -225,7 +225,6 @@ private JList getBotList() {
 	return myBotList;
 }
 
-@Override
 public void valueChanged(ListSelectionEvent e) {
 	if ( e.getSource().equals(myBotTypeList)){
         refreshBotList();
@@ -236,7 +235,6 @@ private void refreshBotList() {
     myBotList.setListData(myEngine.getBots(myBotTypeList.getSelectedValues(), mSearchTerms));
 }
 
-@Override
 public void actionPerformed(ActionEvent e) {
 	if (e.getActionCommand().equals("Cancel")){
 		dispose();

@@ -320,7 +320,6 @@ private JPanel getBottomPanel() {
 	return thePanel;
   }
 
-@Override
 public void actionPerformed(ActionEvent e) {
 	if (e.getActionCommand().equals("Cancel")){
 		dispose();
@@ -410,7 +409,6 @@ public void actionPerformed(ActionEvent e) {
     }
 }
 
-	@Override
 	public void valueChanged(ListSelectionEvent e) {
         if (!e.getValueIsAdjusting() && ((JList) e.getSource()).getSelectedValue()!=null) {
             myEngine.getCurrentGame().getActivePlayer().attemptToPlay((DomCard) ((JList) e.getSource()).getSelectedValue());
@@ -427,7 +425,6 @@ public void actionPerformed(ActionEvent e) {
 
     private ActionListener getListener() {
         return new ActionListener() {
-            @Override
             public void actionPerformed(ActionEvent o) {
                 try {
                     if (!logStack.isEmpty()) {
@@ -446,7 +443,6 @@ public void actionPerformed(ActionEvent e) {
         };
     }
 
-    @Override
     public void update(Observable o, Object arg) {
         updateHandList();
         updateInPlayList();
@@ -517,7 +513,6 @@ public void actionPerformed(ActionEvent e) {
         else
             myHintButton.setVisible(false);
         SwingUtilities.invokeLater(new Runnable() {
-            @Override
             public void run() {
                 myLogScroll.getVerticalScrollBar().setValue(myLogScroll.getVerticalScrollBar().getMaximum());
             }
@@ -545,7 +540,6 @@ public void actionPerformed(ActionEvent e) {
         if (thePlayer.getCardsInPlay().isEmpty())
             ((DefaultListModel) myInPlayList.getModel()).addElement("");
         Runnable doRun = new Runnable() {
-            @Override
             public void run() {
                 myInPlayList.ensureIndexIsVisible(((DefaultListModel) myInPlayList.getModel()).size() - 1);
             }

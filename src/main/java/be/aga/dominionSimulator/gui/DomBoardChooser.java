@@ -126,7 +126,6 @@ private JList getBoardList() {
 	return myBoardList;
 }
 
-@Override
 public void actionPerformed(ActionEvent e) {
 	if (e.getActionCommand().equals("Cancel")){
 		dispose();
