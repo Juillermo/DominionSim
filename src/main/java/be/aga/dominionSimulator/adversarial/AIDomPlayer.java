@@ -22,18 +22,20 @@ import be.aga.dominionSimulator.cards.Mountain_PassCard;
  */
 public class AIDomPlayer extends DomPlayer {
 	private int currentPly;
+	private static int maxPly = 2;
 	private boolean realPlayer;
 	private boolean goodGuy;
+	private static double defaultEval = 0.0;
 
-	public AIDomPlayer(String aString, int ply) {
+	public AIDomPlayer(String aString) {
 		super(aString);
-		currentPly = ply;
+		currentPly = 0;
 		realPlayer = true;
 		goodGuy = true;
 	}
 
 	@Override
-	public void makeBuyDecision() {
+	public double makeBuyDecision() {
 		DomBoard board = getCurrentGame().getBoard();
 		DomCardName bestCard = null;
 		double bestEval = 0.0;
@@ -92,12 +94,12 @@ public class AIDomPlayer extends DomPlayer {
 		}
 
 		if (currentPly == 0) {
-			if (bestCard != null) {
+			if (bestCard != null){
 				continueBuyDecision(bestCard);
+				return 0.0;
 			}
-		} else {
-			// return bestEval;
-		}
+		} else
+			return bestEval;
 
 		DomEngine.addToLog(name + " buys NOTHING!");
 
@@ -106,6 +108,7 @@ public class AIDomPlayer extends DomPlayer {
 		// say 'buys nothing'
 		// TODO maybe clean this up
 		buysLeft = 0;
+		return 0.0;
 	}
 
 	private void continueBuyDecision(DomCardName aCard) {
@@ -126,80 +129,7 @@ public class AIDomPlayer extends DomPlayer {
 		}
 	}
 
-	private double alphaBeta(DomCardName buyingCard) {
-		AIDomGame nodeGame = (AIDomGame) DeepCopy.copy(getCurrentGame());
-
-		ArrayList<DomPlayer> originalPlayers = nodeGame.getPlayers();
-		ArrayList<AIDomPlayer> nodePlayers = new ArrayList<AIDomPlayer>();
-		AIDomPlayer father = (AIDomPlayer) nodeGame.getActivePlayer();
-
-		for (DomPlayer player : originalPlayers) {
-			
-			AIDomPlayer robotizedPlayer = (AIDomPlayer) player;
-			
-			if (robotizedPlayer != father)
-				if (currentPly == 0){
-					robotizedPlayer.setNotHuman();					
-					robotizedPlayer.setBadGuy();
-				}
-			
-			robotizedPlayer.increasePly();
-			nodePlayers.add(robotizedPlayer);
-		}
-		
-		nodeGame.setPlayers(nodePlayers);
-
-		// Continue playing with the father using continue buy
-		// Need to change from human game to simulated game??
-
-		return 0.0;
-	}
-
-	@Override
-	public void takeTurn() {
-		// for(DomCard theCard : getDeck().getAllCards()) {
-		// if (theCard.owner==null) {
-		// System.out.println("Error, cards in deck with null owner "+ theCard);
-
-		// System.out.println(getDeck());
-		// }
-		// }
-		initializeTurn();
-		handleTeachers();
-		handleGuides();
-		resolveHorseTraders();
-		resolveDurationEffects();
-		resolveCardsToSummon();
-		resolvePrincedCards();
-		resolveRatcatchers();
-		handleTransmogrify();
-		handleDelayedBoons();
-		doActionPhase();
-		doBuyPhase();
-		continueTurn();
-	}
-
-	public void continueTurn() {
-		continueBuyPhase();
-		doNightPhase();
-		doCleanUpPhase();
-
-		// actually this is not part of the turn so we set Possessor to null
-		possessor = null;
-		if (donateTriggered)
-			DonateCard.trashStuff(this);
-		if (getCurrentGame().isAuctionTriggered()) {
-			Mountain_PassCard.doTheAuction(this);
-			getCurrentGame().setAuctionTriggered(false);
-		}
-		// TODO moved from buy phase to here... ok?
-		updateVPCurve(false);
-		// TODO needed fixing
-		actionsLeft = 1;
-		getCurrentGame().setPreviousTurnTakenBy(this);
-	}
-
-	private void doBuyPhase() {
+	private double doBuyPhase() {
 		long theTime = System.currentTimeMillis();
 		setPhase(DomPhase.Buy);
 		if (getCurrentGame().getBoard().isLandmarkActive(DomCardName.Arena)
@@ -237,22 +167,38 @@ public class AIDomPlayer extends DomPlayer {
 					DomEngine.addToLog(name + " has $" + debt + " in debt left so can't buy cards or events");
 				break;
 			}
-			makeBuyDecision();
-			continueBuyPhase();
-			buysLeft--;
-			if (isVillaTriggered()) {
-				setVillaTriggered(false);
-				if (DomEngine.haveToLog)
-					DomEngine.addToLog(
-							name + " triggers " + DomCardName.Villa.toHTML() + " and moves back to the action phase");
-				doActionPhase();
-				doBuyPhase();
+			double bestEval = makeBuyDecision();
+			if (currentPly == 0) {
+				continueBuyPhase(theTime);
+				return 0.0;
+			} else {
+				if (bestEval != 0)
+					return bestEval;
+				else{
+					bestEval = continueBuyPhase(theTime);
+					if (bestEval != 0)
+						return bestEval;
+					else
+						return 0.0;
+				}
 			}
 		}
+		return -17;
 	}
 
-	private void continueBuyPhase() {
+	private double continueBuyPhase(long theTime) {
 		buysLeft--;
+		if (isVillaTriggered()) {
+			setVillaTriggered(false);
+			if (DomEngine.haveToLog)
+				DomEngine.addToLog(
+						name + " triggers " + DomCardName.Villa.toHTML() + " and moves back to the action phase");
+			doActionPhase();
+			double bestEval = doBuyPhase();
+			if (currentPly != 0)
+				if (bestEval != 0)
+					return bestEval;
+		}
 		while (buysLeft > 0) {
 			if (debt > 0)
 				payOffDebt();
@@ -261,15 +207,20 @@ public class AIDomPlayer extends DomPlayer {
 					DomEngine.addToLog(name + " has $" + debt + " in debt left so can't buy cards or events");
 				break;
 			}
-			makeBuyDecision();
-			buysLeft--;
-			if (isVillaTriggered()) {
-				setVillaTriggered(false);
-				if (DomEngine.haveToLog)
-					DomEngine.addToLog(
-							name + " triggers " + DomCardName.Villa.toHTML() + " and moves back to the action phase");
-				doActionPhase();
-				doBuyPhase();
+			double bestEval = makeBuyDecision();
+			if (currentPly == 0) {
+				continueBuyPhase(theTime);
+				return 0.0;
+			} else {
+				if (bestEval != 0)
+					return bestEval;
+				else{
+					bestEval = continueBuyPhase(theTime);
+					if (bestEval != 0)
+						return bestEval;
+					else
+						return 0.0;
+				}
 			}
 		}
 		if (coinTokensToAdd > 0) {
@@ -278,6 +229,97 @@ public class AIDomPlayer extends DomPlayer {
 		}
 		handleWineMerchants();
 		buyTime += System.currentTimeMillis() - theTime;
+		return 0.0;
+	}
+	
+	@Override
+	public double takeTurn() {
+		// for(DomCard theCard : getDeck().getAllCards()) {
+		// if (theCard.owner==null) {
+		// System.out.println("Error, cards in deck with null owner "+ theCard);
+
+		// System.out.println(getDeck());
+		// }
+		// }
+		initializeTurn();
+		handleTeachers();
+		handleGuides();
+		resolveHorseTraders();
+		resolveDurationEffects();
+		resolveCardsToSummon();
+		resolvePrincedCards();
+		resolveRatcatchers();
+		handleTransmogrify();
+		handleDelayedBoons();
+		doActionPhase();
+		double bestEval = doBuyPhase();
+		if (currentPly == 0) {
+			continueTurn();
+			return 0.0;
+		} else {
+			if (bestEval != 0)
+				return bestEval;
+			else{
+				continueTurn();
+				return 0.0;
+			}
+		}
+	}
+
+	public void continueTurn() {
+		doNightPhase();
+		doCleanUpPhase();
+
+		// actually this is not part of the turn so we set Possessor to null
+		possessor = null;
+		if (donateTriggered)
+			DonateCard.trashStuff(this);
+		if (getCurrentGame().isAuctionTriggered()) {
+			Mountain_PassCard.doTheAuction(this);
+			getCurrentGame().setAuctionTriggered(false);
+		}
+		// TODO moved from buy phase to here... ok?
+		updateVPCurve(false);
+		// TODO needed fixing
+		actionsLeft = 1;
+		getCurrentGame().setPreviousTurnTakenBy(this);
+	}
+
+	private double alphaBeta(DomCardName buyingCard) {
+		AIDomGame nodeGame = (AIDomGame) DeepCopy.copy(getCurrentGame());
+
+		ArrayList<DomPlayer> originalPlayers = nodeGame.getPlayers();
+		ArrayList<DomPlayer> nodePlayers = new ArrayList<DomPlayer>();
+		AIDomPlayer father = (AIDomPlayer) nodeGame.getActivePlayer();
+
+		for (DomPlayer player : originalPlayers) {
+			
+			AIDomPlayer robotizedPlayer = (AIDomPlayer) player;
+			
+			if (robotizedPlayer != father)
+				if (currentPly == 0){
+					robotizedPlayer.setNotHuman();					
+					robotizedPlayer.setBadGuy();
+				}
+
+			robotizedPlayer.increasePly();
+			nodePlayers.add(robotizedPlayer);
+		}
+		
+		nodeGame.setPlayers(nodePlayers);
+		
+		father.continueBuyDecision(buyingCard);
+		father.continueBuyPhase(System.currentTimeMillis());
+		father.continueTurn();
+		
+		double eval;
+		
+		if (currentPly == maxPly)
+			eval = nodeGame.computeHeuristics();
+		else
+			eval = nodeGame.continueContinuedAIGame();
+
+		return eval;
 	}
 
 	private void increasePly(){
@@ -301,7 +343,7 @@ public class AIDomPlayer extends DomPlayer {
 		isHuman = false;
 	}
 
-	private boolean getNature() {
+	public boolean getNature() {
 		return goodGuy;
 	}
 

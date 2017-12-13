@@ -209,7 +209,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
         return theBestCardToTrash;
     }
 
-    public void makeBuyDecision() {
+    public double makeBuyDecision() {
         for (DomBuyRule theBuyRule : getBuyRules()) {
             if (theBuyRule.getCardToBuy().hasCardType(DomCardType.Prize))
                 continue;
@@ -229,11 +229,11 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
                     if (debt > 0) {
                         payOffDebt();
                     }
-                    return;
+                    return 0.0;
                 }
                 if (!hasExtraMissionTurn() && tryToBuy(theBuyRule.getCardToBuy(), true)) {
                     coinTokensToAdd += getCardsFromPlay(DomCardName.Merchant_Guild).size();
-                    return;
+                    return 0.0;
                 }
             }
         }
@@ -242,6 +242,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
         //a bit dirty setting buysLeft to 0 to make him stop trying to buy stuff and say 'buys nothing'
         //TODO maybe clean this up
         buysLeft = 0;
+        return 0.0;
     }
 
     protected DomCost determineCostAndCheckSplitPiles(DomBuyRule theBuyRule) {
@@ -448,7 +449,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
         return theCards;
     }
 
-    public void takeTurn() {
+    public double takeTurn() {
 //        for(DomCard theCard : getDeck().getAllCards()) {
 //            if (theCard.owner==null) {
 //                System.out.println("Error, cards in deck with null owner "+ theCard);
@@ -484,6 +485,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
         //TODO needed fixing
         actionsLeft=1;
         getCurrentGame().setPreviousTurnTakenBy(this);
+        return 0.0;
     }
 
     protected void handleDelayedBoons() {
@@ -723,7 +725,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
         resetVariables();
     }
 
-    private void doBuyPhase() {
+    private double doBuyPhase() {
         long theTime = System.currentTimeMillis();
         setPhase(DomPhase.Buy);
         if (getCurrentGame().getBoard().isLandmarkActive(DomCardName.Arena) && !getCardsFromHand(DomCardType.Action).isEmpty()) {
@@ -775,6 +777,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
         }
         handleWineMerchants();
         buyTime += System.currentTimeMillis() - theTime;
+        return 0.0;
     }
 
     protected boolean isInBuyRules(DomCardName aCard) {

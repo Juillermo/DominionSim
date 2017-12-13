@@ -24,17 +24,13 @@ public class AIDomGame extends DomGame {
 		// TODO Auto-generated constructor stub
 	}
 	
-	public void continueHumanGame() {
+	public double continueAIGame() {
+		double eval = 17.0;
 		if (!isGameFinished()) {
 			setChanged();
 			notifyObservers();
-			if (activePlayer.isHuman() && !activePlayer.hasExtraOutpostTurn() && !activePlayer.hasExtraMissionTurn()) {
-				activePlayer = activePlayer.getOpponents().get(0);
-				DomEngine.logPlayerIndentation++;
-			}
 			activePlayer.setPossessor(activePlayer.removePossessorTurn());
-			while (!isGameFinished() && (!activePlayer.isHumanOrPossessedByHuman()
-					|| (activePlayer.isHuman() && activePlayer.getPossessor() != null))) {
+			while (!isGameFinished()) {
 				if (activePlayer.equals(players.get(0))) {
 					DomEngine.logPlayerIndentation = 0;
 				}
@@ -42,40 +38,47 @@ public class AIDomGame extends DomGame {
 					activePlayer.takeTurn();
 					activePlayer.setPossessor(activePlayer.removePossessorTurn());
 				}
-				if (!activePlayer.isHuman()) {
-					activePlayer.takeTurn();
-					if (activePlayer.hasExtraOutpostTurn() && !isGameFinished()) {
-						activePlayer.takeTurn();
-					}
-					if (activePlayer.hasExtraMissionTurn() && !isGameFinished()) {
-						activePlayer.takeTurn();
-					}
-					getEngine().getGameFrame()
-							.hover("<html>Opponent gained: " + activePlayer.getGainedCardsText() + "</html>");
-					activePlayer = activePlayer.getOpponents().get(0);
-					if (!activePlayer.getPossessionTurns().isEmpty()) {
-						activePlayer.setPossessor(activePlayer.removePossessorTurn());
-					}
-					DomEngine.logPlayerIndentation++;
-				}
-			}
-			if (!isGameFinished()) {
-				if (activePlayer.equals(players.get(0))) {
-					DomEngine.logPlayerIndentation = 0;
-				}
-				initHumanOrPossessedPlayer();
-			} else {
-				myEngine.doEndOfHumanGameStuff();
+				activePlayer.takeTurn();
+				eval = continueContinuedAIGame();
 			}
 		} else {
-			myEngine.doEndOfHumanGameStuff();
+//			AIDomPlayer winner = (AIDomPlayer) determineWinners();
+//			if (winner.getNature())
+//				return 0.7;
+			return computeHeuristics(); //TODO special case if winning?
 		}
-		setChanged();
-		notifyObservers();
+		return eval;
 	}
 	
-	private void setPlayers(ArrayList<AIDomPlayer> newPlayers){
+	public double continueContinuedAIGame(){
+		double eval;
+		if (activePlayer.hasExtraOutpostTurn() && !isGameFinished()) {
+			eval = activePlayer.takeTurn();
+			return eval;
+		}
+		if (activePlayer.hasExtraMissionTurn() && !isGameFinished()) {
+			activePlayer.takeTurn();
+		}
+		getEngine().getGameFrame()
+				.hover("<html>Opponent gained: " + activePlayer.getGainedCardsText() + "</html>");
+		activePlayer = activePlayer.getOpponents().get(0);
+		if (!activePlayer.getPossessionTurns().isEmpty()) {
+			activePlayer.setPossessor(activePlayer.removePossessorTurn());
+		}
+		DomEngine.logPlayerIndentation++;
+		return continueAIGame();
+	}
+	
+	public void setPlayers(ArrayList<DomPlayer> newPlayers){
 		players = newPlayers;
+	}
+	
+	public void setActivePlayer(AIDomPlayer newPlayer){
+		activePlayer = newPlayer;
+	}
+	
+	public double computeHeuristics(){
+		return 555;
 	}
 
 }

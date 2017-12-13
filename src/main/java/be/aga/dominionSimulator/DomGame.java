@@ -131,10 +131,11 @@ public class DomGame extends Observable {
 		DomEngine.logPlayerIndentation = 0;
 	}
 
-	public void determineWinners() {
+	public DomPlayer determineWinners() {
 		int theMaxPoints = -1000;
 		int theMinTurns = 10000;
 		int winners = 0;
+		DomPlayer winner = new DomPlayer(null);
 
 		for (DomPlayer thePlayer : players) {
 			thePlayer.handleGameEnd();
@@ -178,10 +179,12 @@ public class DomGame extends Observable {
 							DomEngine.addToStartOfLog(thePlayer + " wins this game!!");
 						// if (players.get(0).pprUsed)
 						thePlayer.addWin();
+						winner = thePlayer;
 					}
 				}
 			}
 		}
+		return winner;
 	}
 
 	private String getLandMarkText(DomPlayer thePlayer) {

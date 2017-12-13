@@ -7,7 +7,7 @@ import java.util.HashMap;
 import javax.swing.AbstractButton;
 import javax.swing.JButton;
 
-import be.aga.dominionSimulator.AIDomPlayer;
+import be.aga.dominionSimulator.adversarial.AIDomPlayer;
 import be.aga.dominionSimulator.DomEngine;
 import be.aga.dominionSimulator.DomPlayer;
 

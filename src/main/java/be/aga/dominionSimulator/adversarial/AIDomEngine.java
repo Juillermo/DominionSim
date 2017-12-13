@@ -14,10 +14,7 @@ import be.aga.dominionSimulator.gui.DomGameFrame;
  */
 public class AIDomEngine extends DomEngine {
 	
-	private int aaa;
-	
 	public AIDomEngine() {
-		aaa = 1;
 		loadSystemBots();
 		createSimpleCardStrategiesBots();
 		loadCurrentUserBots();
