@@ -39,6 +39,36 @@ public class DomBoard extends EnumMap<DomCardName, ArrayList<DomCard>> {
 		super(aKeyType);
 		players = aPlayers;
 	}
+	
+	/**
+     * Copy constructor
+     */
+	public DomBoard( DomBoard source, ArrayList<DomPlayer> newPlayers) {
+		super(source);
+		players = newPlayers;
+		
+		for(DomCard item : source.trashPile) trashPile.add(new DomCard(item, null));
+		for(DomCard item : source.blackMarketDeck) blackMarketDeck.add(new DomCard(item, null));
+		for(DomCard item : source.prizePile) prizePile.add(new DomCard(item, null));
+		
+		separatePiles = new EnumMap<DomCardName, ArrayList<DomCard>>(source.separatePiles);
+		embargoTokens = new EnumMap<DomCardName, Integer>(source.embargoTokens);
+		gatheringVPTokens = new EnumMap<DomCardName, Integer>(source.gatheringVPTokens);
+		tradeRouteMat = new HashSet<DomCardName>(source.tradeRouteMat);
+		activeLandmarks = new HashSet<DomCardName>(source.activeLandmarks);
+		for(DomCard item : source.boons) boons.add(new DomCard(item, null));
+		for(DomCard item : source.boonsDiscard) boonsDiscard.add(new DomCard(item, null));
+		
+		gainsNeededToEndGame = source.gainsNeededToEndGame;
+		taxTokens = new EnumMap<DomCardName, Integer>(source.taxTokens);
+		landmarkTokens = new EnumMap<DomCardName, Integer>(source.landmarkTokens);
+		if (source.myZombieApprentice != null)
+			myZombieApprentice = new DomCard(source.myZombieApprentice, null);
+		if (source.myZombieMason != null)
+			myZombieMason = new DomCard(source.myZombieMason, null);
+		if (source.myZombieSpy != null)
+			myZombieSpy = new DomCard(source.myZombieSpy, null);	
+	}
 
 	public void resetCommon() {
 		gainsNeededToEndGame = 0;

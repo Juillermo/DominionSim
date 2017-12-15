@@ -1,19 +1,14 @@
 package be.aga.dominionSimulator.adversarial;
 
 import java.util.List;
-import java.security.KeyStore.Entry;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
-
 import be.aga.dominionSimulator.*;
 import be.aga.dominionSimulator.enums.DomCardName;
 import be.aga.dominionSimulator.enums.DomCardType;
 import be.aga.dominionSimulator.enums.DomPhase;
-import be.aga.dominionSimulator.adversarial.DeepCopy;
 import be.aga.dominionSimulator.cards.DonateCard;
 import be.aga.dominionSimulator.cards.Mountain_PassCard;
 
@@ -21,18 +16,29 @@ import be.aga.dominionSimulator.cards.Mountain_PassCard;
  * Represents the AI search bot in a simulated game.
  */
 public class AIDomPlayer extends DomPlayer {
-	private int currentPly;
-	private static int maxPly = 2;
-	private boolean realPlayer;
-	private boolean goodGuy;
-	private static double defaultEval = 0.0;
-
+	private int currentPly = 0;
+	private static final int maxPly = 2;
+	private boolean goodGuy = true;
+	
 	public AIDomPlayer(String aString) {
 		super(aString);
-		currentPly = 0;
-		realPlayer = true;
-		goodGuy = true;
 	}
+	
+	/**
+     * Copy constructor
+     */
+    public AIDomPlayer(DomPlayer source, DomGame newGame, DomEngine newEngine) {
+    	super(source, newGame, newEngine);
+    	if(!(source instanceof AIDomPlayer)) {
+    		currentPly = 1;
+    		goodGuy = false;
+    		setNotHuman();
+    	}else {
+    		AIDomPlayer AIsource = (AIDomPlayer) source;
+    		currentPly = AIsource.currentPly + 1;
+    		goodGuy = AIsource.goodGuy;
+    	}
+    }
 
 	@Override
 	public double makeBuyDecision() {
@@ -286,7 +292,7 @@ public class AIDomPlayer extends DomPlayer {
 	}
 
 	private double alphaBeta(DomCardName buyingCard) {
-		AIDomGame nodeGame = (AIDomGame) DeepCopy.copy(getCurrentGame());
+		AIDomGame nodeGame = new AIDomGame(getCurrentGame());
 
 		ArrayList<DomPlayer> originalPlayers = nodeGame.getPlayers();
 		ArrayList<DomPlayer> nodePlayers = new ArrayList<DomPlayer>();
@@ -297,12 +303,10 @@ public class AIDomPlayer extends DomPlayer {
 			AIDomPlayer robotizedPlayer = (AIDomPlayer) player;
 			
 			if (robotizedPlayer != father)
-				if (currentPly == 0){
-					robotizedPlayer.setNotHuman();					
+				if (currentPly == 0){				
 					robotizedPlayer.setBadGuy();
 				}
 
-			robotizedPlayer.increasePly();
 			nodePlayers.add(robotizedPlayer);
 		}
 		

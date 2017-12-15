@@ -2,6 +2,7 @@ package be.aga.dominionSimulator.cards;
 
 import be.aga.dominionSimulator.DomCard;
 import be.aga.dominionSimulator.DomEngine;
+import be.aga.dominionSimulator.DomPlayer;
 import be.aga.dominionSimulator.enums.DomCardName;
 import be.aga.dominionSimulator.enums.DomCardType;
 
@@ -10,7 +11,11 @@ public class EstateCard extends DomCard {
       super( DomCardName.Estate);
     }
     
-    @Override
+    public EstateCard(EstateCard estateCard, DomPlayer sourcePlayer) {
+		super(estateCard, sourcePlayer);
+	}
+
+	@Override
     public int getTrashPriority() {
       if (owner!=null) {
     	if (owner.wantsToGainOrKeep(DomCardName.Estate)) {

@@ -3,6 +3,12 @@ package be.aga.dominionSimulator.adversarial;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import javax.swing.JOptionPane;
+
+import org.xml.sax.InputSource;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.XMLReaderFactory;
+
 import be.aga.dominionSimulator.*;
 import be.aga.dominionSimulator.gui.AIDomGui;
 import be.aga.dominionSimulator.gui.DomGameFrame;
@@ -18,9 +24,12 @@ public class AIDomEngine extends DomEngine {
 		loadSystemBots();
 		createSimpleCardStrategiesBots();
 		loadCurrentUserBots();
-		AIDomGui theGui = new AIDomGui(this);
-		myGui = theGui;
+		myGui = new AIDomGui(this);
 		myGui.setVisible(true);
+	}
+	
+	public AIDomEngine(DomEngine source) {
+		super(source);
 	}
 
 	@Override
@@ -49,5 +58,26 @@ public class AIDomEngine extends DomEngine {
 	
 	public static void main(String[] args) {
 		new AIDomEngine();
+	}
+	
+	@Override
+	public void loadSystemBots() {
+		try {
+			InputSource src = new InputSource(getClass().getResourceAsStream("DomBots.xml"));
+			// InputSource src = new InputSource(new FileInputStream(new File("..."));
+			XMLHandler saxHandler = new XMLHandler();
+			XMLReader rdr = XMLReaderFactory.createXMLReader();
+			rdr.setContentHandler(saxHandler);
+			rdr.parse(src);
+			bots = saxHandler.getBots();
+		} catch (Exception e) {
+			bots = new ArrayList<DomPlayer>();
+			DomPlayer dumbBot = new AIDomPlayer("Big Money Ultimate");
+			bots.add(dumbBot);
+			// TODO: Update this message since this requires Java 1.8.
+//			JOptionPane.showMessageDialog(myGui,
+//					"You'll need to download Java 1.6 at www.java.com to runSimulation this program!!!");
+		}
+		Collections.sort(bots);
 	}
 }

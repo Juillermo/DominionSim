@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
 
+import be.aga.dominionSimulator.adversarial.AIDomPlayer;
 import be.aga.dominionSimulator.cards.DuplicateCard;
 import be.aga.dominionSimulator.enums.DomPhase;
 import org.apache.log4j.ConsoleAppender;
@@ -15,7 +16,11 @@ import be.aga.dominionSimulator.enums.DomCardName;
 import be.aga.dominionSimulator.enums.DomCardType;
 
 public class DomDeck extends EnumMap< DomCardName, ArrayList<DomCard> > {
-    protected static final Logger LOGGER = Logger.getLogger( DomDeck.class );
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	protected static final Logger LOGGER = Logger.getLogger( DomDeck.class );
     static {
         LOGGER.setLevel( DomEngine.LEVEL );
         LOGGER.removeAllAppenders();
@@ -24,7 +29,7 @@ public class DomDeck extends EnumMap< DomCardName, ArrayList<DomCard> > {
     }
 
     private ArrayList< DomCard > drawDeck = new ArrayList< DomCard >();
-    private final ArrayList< DomCard > discardPile = new ArrayList< DomCard >();
+    private ArrayList< DomCard > discardPile = new ArrayList< DomCard >();
     private ArrayList< DomCard > islandMat = new ArrayList< DomCard >();
 
     private DomPlayer owner;
@@ -37,6 +42,18 @@ public class DomDeck extends EnumMap< DomCardName, ArrayList<DomCard> > {
       super( DomCardName.class );
       owner = aDomPlayer; 
       islandMat = new ArrayList< DomCard >();
+    }
+    
+    /**
+     * Copy constructor
+     */
+    public DomDeck(DomDeck source, DomPlayer sourcePlayer) {
+    	super(source);
+    	for (DomCard item : source.drawDeck) drawDeck.add(new DomCard(item, sourcePlayer));
+    	for (DomCard item : source.discardPile) discardPile.add(new DomCard(item, sourcePlayer));
+    	for (DomCard item : source.islandMat) islandMat.add(new DomCard(item, sourcePlayer));
+    	owner = sourcePlayer;
+    	for (DomCard item : source.putAsideCards) putAsideCards.add(new DomCard(item, sourcePlayer));
     }
 
     public void shuffle() {

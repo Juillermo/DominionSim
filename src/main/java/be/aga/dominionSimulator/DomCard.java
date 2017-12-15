@@ -79,6 +79,25 @@ public class DomCard implements Comparable< DomCard >{
     public DomCard ( DomCardName aCardName ) {
       name = aCardName;
     }
+    
+    /**
+     * Copy constructor
+     */
+    public DomCard ( DomCard source, DomPlayer sourcePlayer) {
+    	name = source.name;
+    	owner = sourcePlayer;
+    	isFromBlackMarket = source.isFromBlackMarket;
+    	isTaggedByHerbalist = source.isTaggedByHerbalist;
+    	isBane = source.isBane;
+    	isTaggedByScheme = source.isTaggedByScheme;
+    	discardAtCleanUp = source.discardAtCleanUp;
+    	markedForPrince = source.markedForPrince;
+    	if(source.shapeshifterCard != null)
+    		shapeshifterCard = new DomCard(source.shapeshifterCard, sourcePlayer);
+    	if(source.shapeshifterCard != null)
+    		estateCard = new EstateCard(source.estateCard, sourcePlayer);
+    	hasReacted = source.hasReacted;
+    }
 
     /**
      * @return

@@ -57,7 +57,7 @@ public class DomEngine {
 	/**
 	 * The bots that will play the game.
 	 */
-	private ArrayList<DomPlayer> bots;
+	protected ArrayList<DomPlayer> bots;
 
 	private long boardResetTime = 0;
 	private long checkGameFinishTime = 0;
@@ -94,6 +94,25 @@ public class DomEngine {
 		loadCurrentUserBots();
 		myGui = new DomGui(this);
 		myGui.setVisible(true);
+	}
+	
+	/**
+     * Copy constructor
+     */
+	public DomEngine(DomEngine source) {
+		players = source.players;
+		findWinnerTime = source.findWinnerTime;
+		bots = source.bots;
+		boardResetTime = source.boardResetTime;
+		checkGameFinishTime = source.checkGameFinishTime;
+		playerTurnTime = source.playerTurnTime;
+		myGui = source.myGui;
+		myLastFile = source.myLastFile;
+		myTotalTime = source.myTotalTime;
+		emptyPilesEndingCount = source.emptyPilesEndingCount;
+		myGameFrame = source.myGameFrame;
+		currentGame = source.currentGame;
+		myStatus = source.myStatus;
 	}
 
 	protected void createSimpleCardStrategiesBots() {
@@ -558,5 +577,9 @@ public class DomEngine {
 
 	public String getStatus() {
 		return myStatus;
+	}
+	
+	public void setPlayers(ArrayList<DomPlayer> newPlayers) {
+		players = newPlayers;
 	}
 }

@@ -1,28 +1,26 @@
 package be.aga.dominionSimulator.adversarial;
 
 import java.util.ArrayList;
-import java.util.Observable;
+import java.io.Serializable;
 
 import be.aga.dominionSimulator.DomBoard;
-import be.aga.dominionSimulator.DomCost;
 import be.aga.dominionSimulator.DomEngine;
 import be.aga.dominionSimulator.DomGame;
 import be.aga.dominionSimulator.DomPlayer;
-import be.aga.dominionSimulator.cards.*;
-import org.apache.log4j.ConsoleAppender;
-import org.apache.log4j.Logger;
-import org.apache.log4j.SimpleLayout;
 
-import be.aga.dominionSimulator.enums.DomCardName;
-import be.aga.dominionSimulator.enums.DomCardType;
-import be.aga.dominionSimulator.enums.DomPhase;
-
-public class AIDomGame extends DomGame {
+public class AIDomGame extends DomGame{
 
 	public AIDomGame(DomBoard aBoard, ArrayList<DomPlayer> aPlayers, DomEngine anEngine) {
 		super(aBoard, aPlayers, anEngine);
 		// TODO Auto-generated constructor stub
 	}
+	
+	/**
+     * Copy constructor
+     */
+    public AIDomGame(DomGame source) {
+    	super(source);
+    }
 	
 	public double continueAIGame() {
 		double eval = 17.0;

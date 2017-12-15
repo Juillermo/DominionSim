@@ -3,6 +3,8 @@ package be.aga.dominionSimulator;
 import java.util.ArrayList;
 import java.util.Observable;
 
+import be.aga.dominionSimulator.adversarial.AIDomEngine;
+import be.aga.dominionSimulator.adversarial.AIDomPlayer;
 import be.aga.dominionSimulator.cards.*;
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Logger;
@@ -49,6 +51,35 @@ public class DomGame extends Observable {
 			board = aBoard;
 		}
 		initialize();
+	}
+	
+	/**
+     * Copy constructor
+     */
+	public DomGame(DomGame source) {
+		myEngine = new AIDomEngine(source.myEngine);
+		
+		for (DomPlayer sourcePlayer : source.players) {
+            players.add(new AIDomPlayer(sourcePlayer, this, myEngine));
+            if( sourcePlayer == source.activePlayer)
+            	activePlayer = players.get(players.size() - 1);
+		}
+		
+		myEngine.setPlayers(players);
+		
+		board = new DomBoard(source.board, players);
+		
+		checkGameFinishTime = source.checkGameFinishTime;
+		playerTurnTime = source.playerTurnTime;
+		emptyPilesEnding = source.emptyPilesEnding;
+		isNoProvinceGainedYet = source.isNoProvinceGainedYet;
+		auctionTriggered = source.auctionTriggered;
+		
+		previousTurnTakenBy = activePlayer.getOpponents().get(activePlayer.getOpponents().size() - 1);
+		
+		obeliskChoice = source.obeliskChoice;
+		
+		for( DomCard item : source.faceDownCardsInTrash) faceDownCardsInTrash.add(new DomCard(item, null));
 	}
 
 	/**

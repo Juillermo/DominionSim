@@ -3,6 +3,7 @@ package be.aga.dominionSimulator;
 import java.awt.*;
 import java.util.*;
 
+import be.aga.dominionSimulator.adversarial.AIDomGame;
 import be.aga.dominionSimulator.cards.*;
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Logger;
@@ -134,6 +135,126 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
             author = anAuthor;
         if (aDescription != null)
             description = aDescription;
+    }
+    
+    /**
+     * Copy constructor
+     */
+    public DomPlayer(DomPlayer source, DomGame newGame, DomEngine newEngine) {
+    	buyRules = source.buyRules;
+    	prizeBuyRules = source.prizeBuyRules;
+    	playStrategies = source.playStrategies;
+    	keywords = source.keywords;
+    	
+    	deck = new DomDeck(source.deck, this);
+    	
+    	for(DomCard item : source.cardsInPlay) cardsInPlay.add(new DomCard(item, this));
+    	for(DomCard item : source.cardsInHand) cardsInHand.add(new DomCard(item, this));
+    	for(DomCard item : source.nativeVillageMat) nativeVillageMat.add(new DomCard(item, this));
+    	for(DomCard item : source.horseTradersPile) horseTradersPile.add(new DomCard(item, this));
+    	for(DomCard item : source.cardsToSummon) cardsToSummon.add(new DomCard(item, this));
+
+    	name = source.name;
+    	actionsLeft = source.actionsLeft;
+    	buysLeft = source.buysLeft;
+    	availableCoins = source.availableCoins;
+    	availablePotions = source.availablePotions;
+    	
+    	game = newGame;
+    	
+    	wins = source.wins;
+    	ties = source.ties;
+    	
+    	for(Integer item : source.moneyCurve) moneyCurve.add(item);
+    	for(Integer item : source.VPcurve) VPcurve.add(item);
+    	
+    	turns = source.turns;
+    	victoryTokens = source.victoryTokens;
+    	pointsBeforeBuys = source.pointsBeforeBuys;
+    	sumTurns = source.sumTurns;
+    	pirateShipLevel = source.pirateShipLevel;
+    	actionTime = source.actionTime;
+    	countVPTime = source.countVPTime;
+    	buyTime = source.buyTime;
+    	hoardCount = source.hoardCount;
+    	forcedStart = source.forcedStart;
+    	
+    	for(DomCard item : source.boughtCards) boughtCards.add(new DomCard(item, this));
+    	for(DomCardName item : source.forbiddenCardsToBuy) forbiddenCardsToBuy.add(item);
+    	
+    	actionsplayed = source.actionsplayed;
+    	extraOutpostTurn = source.extraOutpostTurn;
+    	
+    	possessionTurns = source.possessionTurns;
+    	possessor = source.possessor;
+    	
+    	for(DomCardName item : source.cardsGainedLastTurn) cardsGainedLastTurn.add(item);
+    	
+    	sameCardCount = source.sameCardCount;
+    	previousPlayedCardName = source.previousPlayedCardName;
+    	types = source.types;
+    	description = source.description;
+    	author = source.author;
+    	currentPhase = source.currentPhase;
+    	
+    	for(DomCard item : source.cardsToStayInPlay) cardsToStayInPlay.add(new DomCard(item, this));
+    	
+    	knownTopCards = source.knownTopCards;
+    	myStartState = source.myStartState;
+    	mySuggestedBoardCards = source.mySuggestedBoardCards;
+    	myBaneCard = source.myBaneCard;
+    	coinTokens = source.coinTokens;
+    	journeyTokenIsFaceUp = source.journeyTokenIsFaceUp;
+    	
+    	for(DomCard item : source.tavernMat) tavernMat.add(new DomCard(item, this));
+    	
+    	minusOneCardToken = source.minusOneCardToken;
+    	plusOneBuyTokenOn = source.plusOneBuyTokenOn;
+    	
+    	for(DomCard item : source.princedCards) princedCards.add(new DomCard(item, this));
+    	
+    	minusOneCoinToken = source.minusOneCoinToken;
+    	plusOneCardTokenOn = source.plusOneCardTokenOn;
+    	plusOneActionTokenOn = source.plusOneActionTokenOn;
+    	travellingFairIsActive = source.travellingFairIsActive;
+    	pilgrimageActivatedThisTurn = source.pilgrimageActivatedThisTurn;
+    	almsActivated = source.almsActivated;
+    	saveActivated = source.saveActivated;
+    	expeditionsActivated = source.expeditionsActivated;
+    	
+    	if( source.estateTokenOn != null)
+    		estateTokenOn = new DomCard(source.estateTokenOn, this);
+    	
+    	coinTokensToAdd = source.coinTokensToAdd;
+    	extraMissionTurn = source.extraMissionTurn;
+    	plusOneCoinTokenOn = source.plusOneCoinTokenOn;
+    	bridgesPlayedCount = source.bridgesPlayedCount;
+    	debt = source.debt;
+    	hasDoubledMoney = source.hasDoubledMoney;
+    	charmReminder = source.charmReminder;
+    	
+    	for(DomCard item : source.mySetAsideEncampments) mySetAsideEncampments.add(new DomCard(item, this));
+    	
+    	donateTriggered = source.donateTriggered;
+    	mountainPassBid = source.mountainPassBid;
+    	obeliskChoice = source.obeliskChoice;
+    	villaTriggered = source.villaTriggered;
+    	merchantsPlayed = source.merchantsPlayed;
+    	drawDeckSize = source.drawDeckSize;
+    	
+    	if (source.savedCard != null)
+    		savedCard = new DomCard(source.savedCard, this);
+    	
+    	isHuman = source.isHuman;
+    	
+    	myEngine = source.myEngine;
+    	
+    	tavernMatAsString = source.tavernMatAsString;
+    	beginningOfTurnTriggers = source.beginningOfTurnTriggers;
+    	shelters = source.shelters;
+    	boons = source.boons;
+    	river$sGiftActive = source.river$sGiftActive;
+    	delayedBoons = source.delayedBoons;
     }
 
     public static ArrayList<DomCard> getMultiplesInHand(MenagerieCard card) {
