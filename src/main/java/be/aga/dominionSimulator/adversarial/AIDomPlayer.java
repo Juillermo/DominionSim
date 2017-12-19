@@ -17,34 +17,42 @@ import be.aga.dominionSimulator.cards.Mountain_PassCard;
  */
 public class AIDomPlayer extends DomPlayer {
 	private int currentPly = 0;
-	private static final int maxPly = 2;
+	private static final int maxPly = 4; // Not including number of players
 	private boolean goodGuy = true;
-	
+	private ArrayList<String> decisionTree = new ArrayList<String>();
+
 	public AIDomPlayer(String aString) {
 		super(aString);
 	}
-	
+
 	/**
-     * Copy constructor
-     */
-    public AIDomPlayer(DomPlayer source, DomGame newGame, DomEngine newEngine) {
-    	super(source, newGame, newEngine);
-    	if(!(source instanceof AIDomPlayer)) {
-    		currentPly = 1;
-    		goodGuy = false;
-    		setNotHuman();
-    	}else {
-    		AIDomPlayer AIsource = (AIDomPlayer) source;
-    		currentPly = AIsource.currentPly + 1;
-    		goodGuy = AIsource.goodGuy;
-    	}
-    }
+	 * Copy constructor
+	 */
+	public AIDomPlayer(DomPlayer source, DomGame newGame, DomEngine newEngine) {
+		super(source, newGame, newEngine);
+		if (!(source instanceof AIDomPlayer)) {
+			currentPly = 1;
+			goodGuy = false;
+			setNotHuman();
+		} else {
+			AIDomPlayer AIsource = (AIDomPlayer) source;
+			currentPly = AIsource.currentPly + 1;
+			goodGuy = AIsource.goodGuy;
+		}
+	}
 
 	@Override
 	public double makeBuyDecision() {
+		String intro = new String(new char[currentPly]).replace("\0", "x ");
+		if (currentPly == 0)
+			DomEngine.addToLog(intro + name + " at ply " + currentPly + ".");
+		System.out.println(intro + name + " at ply " + currentPly + ".");
+
 		DomBoard board = getCurrentGame().getBoard();
 		DomCardName bestCard = null;
 		double bestEval = 0.0;
+		double worstEval = 100;
+		ArrayList<String> bestDecisionTree = new ArrayList<String>();
 
 		// Randomize cards to buy
 		// TODO Sort them by ranking of how good they are
@@ -53,61 +61,76 @@ public class AIDomPlayer extends DomPlayer {
 		Collections.shuffle(list);
 		for (Map.Entry<DomCardName, ArrayList<DomCard>> entry : list) {
 			DomCardName cardName = entry.getKey();
-			if (board.isFromSeparatePile(cardName))
-				continue;
-			DomCost theCost = determineCostAndCheckSplitPiles(cardName);
-			if (theCost == null)
-				continue;
-			if (getTotalAvailableCurrency().compareButIgnoreDebtTo(theCost) < 0)
-				continue;
-			if (cardName == DomCardName.Curse || cardName == DomCardName.Copper)
-				continue;
 
-			if (cardName.hasCardType(DomCardType.Event)) {
-				if (!wantsEvent(cardName))
-					continue;
-			}
+			if (checkWhetherBuyable(cardName)) {
+				System.out.println(intro + name + currentPly + " evaluates buying " + cardName);
+				if (currentPly == 0)
+					DomEngine.addToLog(intro + name + currentPly + " evaluates buying " + cardName);
 
-			if (!hasExtraMissionTurn()) {
-				if (game.countInSupply(cardName) == 0) {
-					// if (DomEngine.haveToLog) DomEngine.addToLog( aCardName +
-					// " is no more available to buy");
-					continue;
-				}
-				if (suicideIfBuys(cardName)) {
-					if (DomEngine.haveToLog)
-						DomEngine.addToLog("<FONT style=\"BACKGROUND-COLOR: red\">SUICIDE!</FONT> Can not buy "
-								+ cardName.toHTML());
-					continue;
-				}
-				if (forbiddenCardsToBuy.contains(cardName))
-					continue;
-
-				if (cardName == DomCardName.Grand_Market && !getCardsFromPlay(DomCardName.Copper).isEmpty())
-					continue;
-
-				if (!isHumanOrPossessedByHuman() && coinTokens > 0
-						&& getDesiredCard(getAvailableCurrencyWithoutTokens(), false) != cardName
-						&& checkIfWantsToHoardCoinTokens() && !wants(DomCardName.Gardens)) {
-					continue;
-				}
-
-				double eval = alphaBeta(cardName);
-				if (eval > bestEval)
+				DomEngine.haveToLog = false;
+				ArrayList<String> decisionTree = new ArrayList<String>();
+				double eval = alphaBeta(cardName, decisionTree);
+				if (currentPly == 0)
+					DomEngine.haveToLog = true;
+				System.out.println(intro + "Which scores " + eval + " with " + decisionTree);
+				if (currentPly == 0)
+					DomEngine.addToLog(intro + "Which scores " + eval + " with " + decisionTree);
+				if (goodGuy && eval > bestEval) {
+					bestEval = eval;
 					bestCard = cardName;
+					bestDecisionTree = decisionTree;
+				} else if (!goodGuy && eval < worstEval) {
+					worstEval = eval;
+					bestCard = cardName;
+					bestDecisionTree = decisionTree;
+				}
 			}
+		}
 
+		// Not buying any card
+		if (currentPly == 0)
+			DomEngine.addToLog(intro + name + currentPly + " evaluates not buying anything");
+		System.out.println(intro + name + currentPly + " evaluates not buying anything");
+		DomEngine.haveToLog = false;
+		ArrayList<String> decisionTree = new ArrayList<String>();
+		double eval = alphaBeta(null, decisionTree);
+		if (currentPly == 0)
+			DomEngine.haveToLog = true;
+		if (currentPly == 0)
+			DomEngine.addToLog(intro + "Which scores " + eval + " with " + decisionTree);
+		System.out.println(intro + "Which scores " + eval + " with " + decisionTree);
+		if (goodGuy && eval > bestEval) {
+			bestEval = eval;
+			bestCard = null;
+			bestDecisionTree = decisionTree;
+		} else if (!goodGuy && eval < worstEval) {
+			worstEval = eval;
+			bestCard = null;
+			bestDecisionTree = decisionTree;
 		}
 
 		if (currentPly == 0) {
-			if (bestCard != null){
+			if (bestCard != null) {
+				DomEngine.addToLog(intro + name + currentPly + " decides to buy " + bestCard + ".");
 				continueBuyDecision(bestCard);
 				return 0.0;
 			}
-		} else
-			return bestEval;
+		} else {
+			// if (bestCard != null)
+			// DomEngine.addToLog(intro + name + currentPly + " decides to buy " + bestCard
+			// + " in the sub-branch.");
+			// else
+			// DomEngine.addToLog(intro + name + currentPly + " decides not to buy anything
+			// in the sub-branch.");
+			this.setDecisionTree(bestDecisionTree);
+			if (goodGuy) {
+				return bestEval;
+			} else
+				return worstEval;
+		}
 
-		DomEngine.addToLog(name + " buys NOTHING!");
+		if (currentPly == 0)
+			DomEngine.addToLog(intro + name + currentPly + " decides to buy NOTHING!");
 
 		// a bit dirty setting buysLeft to 0 to make him stop trying to buy
 		// stuff and
@@ -178,15 +201,7 @@ public class AIDomPlayer extends DomPlayer {
 				continueBuyPhase(theTime);
 				return 0.0;
 			} else {
-				if (bestEval != 0)
-					return bestEval;
-				else{
-					bestEval = continueBuyPhase(theTime);
-					if (bestEval != 0)
-						return bestEval;
-					else
-						return 0.0;
-				}
+				return bestEval;
 			}
 		}
 		return -17;
@@ -202,8 +217,7 @@ public class AIDomPlayer extends DomPlayer {
 			doActionPhase();
 			double bestEval = doBuyPhase();
 			if (currentPly != 0)
-				if (bestEval != 0)
-					return bestEval;
+				return bestEval;
 		}
 		while (buysLeft > 0) {
 			if (debt > 0)
@@ -218,15 +232,7 @@ public class AIDomPlayer extends DomPlayer {
 				continueBuyPhase(theTime);
 				return 0.0;
 			} else {
-				if (bestEval != 0)
-					return bestEval;
-				else{
-					bestEval = continueBuyPhase(theTime);
-					if (bestEval != 0)
-						return bestEval;
-					else
-						return 0.0;
-				}
+				return bestEval;
 			}
 		}
 		if (coinTokensToAdd > 0) {
@@ -237,7 +243,7 @@ public class AIDomPlayer extends DomPlayer {
 		buyTime += System.currentTimeMillis() - theTime;
 		return 0.0;
 	}
-	
+
 	@Override
 	public double takeTurn() {
 		// for(DomCard theCard : getDeck().getAllCards()) {
@@ -263,12 +269,7 @@ public class AIDomPlayer extends DomPlayer {
 			continueTurn();
 			return 0.0;
 		} else {
-			if (bestEval != 0)
-				return bestEval;
-			else{
-				continueTurn();
-				return 0.0;
-			}
+			return bestEval;
 		}
 	}
 
@@ -291,7 +292,7 @@ public class AIDomPlayer extends DomPlayer {
 		getCurrentGame().setPreviousTurnTakenBy(this);
 	}
 
-	private double alphaBeta(DomCardName buyingCard) {
+	private double alphaBeta(DomCardName buyingCard, ArrayList<String> comingDecisionTree) {
 		AIDomGame nodeGame = new AIDomGame(getCurrentGame());
 
 		ArrayList<DomPlayer> originalPlayers = nodeGame.getPlayers();
@@ -299,37 +300,49 @@ public class AIDomPlayer extends DomPlayer {
 		AIDomPlayer father = (AIDomPlayer) nodeGame.getActivePlayer();
 
 		for (DomPlayer player : originalPlayers) {
-			
+
 			AIDomPlayer robotizedPlayer = (AIDomPlayer) player;
-			
+
 			if (robotizedPlayer != father)
-				if (currentPly == 0){				
+				if (currentPly == 0) {
 					robotizedPlayer.setBadGuy();
 				}
 
+			robotizedPlayer.decisionTree.addAll(this.getDecisionTree());
+			if (buyingCard != null) {
+				robotizedPlayer.decisionTree.add(buyingCard.toString() + father.getCurrentPly());
+			} else {
+				robotizedPlayer.decisionTree.add("Nothing" + father.getCurrentPly());
+			}
 			nodePlayers.add(robotizedPlayer);
 		}
-		
+
 		nodeGame.setPlayers(nodePlayers);
-		
-		father.continueBuyDecision(buyingCard);
+
+		if (buyingCard != null)
+			father.continueBuyDecision(buyingCard);
 		father.continueBuyPhase(System.currentTimeMillis());
 		father.continueTurn();
-		
+
 		double eval;
-		
-		if (currentPly == maxPly)
-			eval = nodeGame.computeHeuristics();
-		else
+		if (father.currentPly != maxPly) {
 			eval = nodeGame.continueContinuedAIGame();
+			
+			AIDomPlayer robotizedPlayer = (AIDomPlayer) nodeGame.getActivePlayer();
+			comingDecisionTree.addAll(robotizedPlayer.getDecisionTree());
+		} else {
+			
+			eval = nodeGame.computeHeuristics();
+			comingDecisionTree.addAll(father.getDecisionTree());
+		}
 
 		return eval;
 	}
 
-	private void increasePly(){
+	private void increasePly() {
 		currentPly++;
 	}
-	
+
 	private void displayBoard() {
 		DomBoard board = getCurrentGame().getBoard();
 		Iterator<DomCardName> enumKeySet = board.keySet().iterator();
@@ -341,6 +354,8 @@ public class AIDomPlayer extends DomPlayer {
 			else
 				DomEngine.addToLog("One pile left!");
 		}
+
+		System.out.println(board);
 	}
 
 	private void setNotHuman() {
@@ -353,5 +368,68 @@ public class AIDomPlayer extends DomPlayer {
 
 	private void setBadGuy() {
 		goodGuy = false;
+	}
+
+	private boolean checkWhetherBuyable(DomCardName cardName) {
+		DomBoard board = getCurrentGame().getBoard();
+
+		if (board.isFromSeparatePile(cardName))
+			return false;
+		DomCost theCost = determineCostAndCheckSplitPiles(cardName);
+		if (theCost == null)
+			return false;
+		if (getTotalAvailableCurrency().compareButIgnoreDebtTo(theCost) < 0)
+			return false;
+		if (cardName == DomCardName.Curse || cardName == DomCardName.Copper)
+			return false;
+
+		if (cardName.hasCardType(DomCardType.Event)) {
+			if (!wantsEvent(cardName))
+				return false;
+		}
+
+		if (!hasExtraMissionTurn()) {
+			if (game.countInSupply(cardName) == 0) {
+				if (DomEngine.haveToLog)
+					DomEngine.addToLog(cardName + " is no more available to buy");
+				return false;
+			}
+			if (suicideIfBuys(cardName)) {
+				if (DomEngine.haveToLog)
+					DomEngine.addToLog(
+							"<FONT style=\"BACKGROUND-COLOR: red\">SUICIDE!</FONT> Can not buy " + cardName.toHTML());
+				return false;
+			}
+			if (forbiddenCardsToBuy.contains(cardName))
+				return false;
+
+			if (cardName == DomCardName.Grand_Market && !getCardsFromPlay(DomCardName.Copper).isEmpty())
+				return false;
+
+			if (!isHumanOrPossessedByHuman() && coinTokens > 0
+					&& getDesiredCard(getAvailableCurrencyWithoutTokens(), false) != cardName
+					&& checkIfWantsToHoardCoinTokens() && !wants(DomCardName.Gardens)) {
+				return false;
+			}
+
+			return true;
+		}
+		return false;
+	}
+
+	public int getCurrentPly() {
+		return currentPly;
+	}
+
+	public void setCurrentPly(int currentPly) {
+		this.currentPly = currentPly;
+	}
+
+	public ArrayList<String> getDecisionTree() {
+		return decisionTree;
+	}
+
+	public void setDecisionTree(ArrayList<String> decisionTree) {
+		this.decisionTree = decisionTree;
 	}
 }

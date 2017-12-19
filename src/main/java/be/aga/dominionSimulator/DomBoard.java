@@ -44,14 +44,38 @@ public class DomBoard extends EnumMap<DomCardName, ArrayList<DomCard>> {
      * Copy constructor
      */
 	public DomBoard( DomBoard source, ArrayList<DomPlayer> newPlayers) {
-		super(source);
+		super(DomCardName.class);
+		
+		Iterator<DomCardName> enumKeySet = source.keySet().iterator();
+		while (enumKeySet.hasNext()) {
+			DomCardName currentState = enumKeySet.next();
+			
+			ArrayList<DomCard> sourceCards = source.get(currentState);
+			ArrayList<DomCard> newCards = new ArrayList<DomCard>();
+			for(DomCard item : sourceCards) newCards.add(new DomCard(item, null));
+			
+			super.put(currentState, newCards);
+		}
+		
+		separatePiles = new EnumMap<DomCardName, ArrayList<DomCard>>(DomCardName.class);
+		
+		Iterator<DomCardName> enumKeySet2 = source.separatePiles.keySet().iterator();
+		while (enumKeySet2.hasNext()) {
+			DomCardName currentState = enumKeySet2.next();
+			
+			ArrayList<DomCard> sourceCards = source.separatePiles.get(currentState);
+			ArrayList<DomCard> newCards = new ArrayList<DomCard>();
+			for(DomCard item : sourceCards) newCards.add(new DomCard(item, null));
+			
+			separatePiles.put(currentState, newCards);
+		}
+		
 		players = newPlayers;
 		
 		for(DomCard item : source.trashPile) trashPile.add(new DomCard(item, null));
 		for(DomCard item : source.blackMarketDeck) blackMarketDeck.add(new DomCard(item, null));
 		for(DomCard item : source.prizePile) prizePile.add(new DomCard(item, null));
 		
-		separatePiles = new EnumMap<DomCardName, ArrayList<DomCard>>(source.separatePiles);
 		embargoTokens = new EnumMap<DomCardName, Integer>(source.embargoTokens);
 		gatheringVPTokens = new EnumMap<DomCardName, Integer>(source.gatheringVPTokens);
 		tradeRouteMat = new HashSet<DomCardName>(source.tradeRouteMat);

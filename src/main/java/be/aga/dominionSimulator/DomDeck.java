@@ -3,6 +3,7 @@ package be.aga.dominionSimulator;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.Iterator;
 
 import be.aga.dominionSimulator.adversarial.AIDomPlayer;
 import be.aga.dominionSimulator.cards.DuplicateCard;
@@ -48,7 +49,18 @@ public class DomDeck extends EnumMap< DomCardName, ArrayList<DomCard> > {
      * Copy constructor
      */
     public DomDeck(DomDeck source, DomPlayer sourcePlayer) {
-    	super(source);
+    	super(DomCardName.class);
+		
+		Iterator<DomCardName> enumKeySet = source.keySet().iterator();
+		while (enumKeySet.hasNext()) {
+			DomCardName currentState = enumKeySet.next();
+			
+			ArrayList<DomCard> sourceCards = source.get(currentState);
+			ArrayList<DomCard> newCards = new ArrayList<DomCard>();
+			for(DomCard item : sourceCards) newCards.add(new DomCard(item, null));
+			
+			super.put(currentState, newCards);
+		}
     	for (DomCard item : source.drawDeck) drawDeck.add(new DomCard(item, sourcePlayer));
     	for (DomCard item : source.discardPile) discardPile.add(new DomCard(item, sourcePlayer));
     	for (DomCard item : source.islandMat) islandMat.add(new DomCard(item, sourcePlayer));

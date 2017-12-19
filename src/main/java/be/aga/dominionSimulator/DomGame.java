@@ -26,7 +26,7 @@ public class DomGame extends Observable {
 	protected final DomEngine myEngine;
 
 	protected ArrayList<DomPlayer> players = new ArrayList<DomPlayer>();
-	DomBoard board;
+	protected DomBoard board;
 	public long checkGameFinishTime = 0;
 	public long playerTurnTime = 0;
 	protected DomPlayer activePlayer;
