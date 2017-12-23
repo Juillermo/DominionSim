@@ -3,8 +3,12 @@ package be.aga.dominionSimulator.adversarial;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
+
 import be.aga.dominionSimulator.*;
 import be.aga.dominionSimulator.enums.DomCardName;
 import be.aga.dominionSimulator.enums.DomCardType;
@@ -17,9 +21,15 @@ import be.aga.dominionSimulator.cards.Mountain_PassCard;
  */
 public class AIDomPlayer extends DomPlayer {
 	private int currentPly = 0;
-	private static final int maxPly = 4; // Not including number of players
+	private static final int maxPly = 5; // Each drawing process and buying decision by each player adds a ply
 	private boolean goodGuy = true;
 	private ArrayList<String> decisionTree = new ArrayList<String>();
+	private static int timeComplexity;
+	private static int outputLevel = 5;
+
+	static final long[] FACTORIALS = new long[] { 1l, 1l, 2l, 6l, 24l, 120l, 720l, 5040l, 40320l, 362880l, 3628800l,
+			39916800l, 479001600l, 6227020800l, 87178291200l, 1307674368000l, 20922789888000l, 355687428096000l,
+			6402373705728000l, 121645100408832000l, 2432902008176640000l };
 
 	public AIDomPlayer(String aString) {
 		super(aString);
@@ -31,50 +41,52 @@ public class AIDomPlayer extends DomPlayer {
 	public AIDomPlayer(DomPlayer source, DomGame newGame, DomEngine newEngine) {
 		super(source, newGame, newEngine);
 		if (!(source instanceof AIDomPlayer)) {
-			currentPly = 1;
-			goodGuy = false;
+			currentPly = 0;
 			setNotHuman();
 		} else {
 			AIDomPlayer AIsource = (AIDomPlayer) source;
-			currentPly = AIsource.currentPly + 1;
+			currentPly = AIsource.currentPly;
 			goodGuy = AIsource.goodGuy;
 		}
 	}
 
 	@Override
 	public double makeBuyDecision() {
-		String intro = new String(new char[currentPly]).replace("\0", "x ");
-		if (currentPly == 0)
-			DomEngine.addToLog(intro + name + " at ply " + currentPly + ".");
-		System.out.println(intro + name + " at ply " + currentPly + ".");
 
-		DomBoard board = getCurrentGame().getBoard();
+		output(name + " at ply " + currentPly + " (buying ply), with $" + availableCoins + " to spend.");
+
+		EnumMap<DomCardName, ArrayList<DomCard>> board = getCurrentGame().getBoard().clone();
 		DomCardName bestCard = null;
 		double bestEval = 0.0;
 		double worstEval = 100;
 		ArrayList<String> bestDecisionTree = new ArrayList<String>();
 
-		// Randomize cards to buy
-		// TODO Sort them by ranking of how good they are
-		List<Map.Entry<DomCardName, ArrayList<DomCard>>> list = new ArrayList<Map.Entry<DomCardName, ArrayList<DomCard>>>(
-				board.entrySet());
-		Collections.shuffle(list);
-		for (Map.Entry<DomCardName, ArrayList<DomCard>> entry : list) {
+		ArrayList<DomCard> noCards = new ArrayList<DomCard>();
+		noCards.add(new DomCard(DomCardName.NoCard));
+		board.put(DomCardName.NoCard, noCards);
+		Set<Map.Entry<DomCardName, ArrayList<DomCard>>> buyOptionsSet = board.entrySet();
+
+		// Randomize cards to buy, for (potentially) more efficient alphaBeta algorithm
+		// TODO Sort them by ranking of how good they are (by cost?)
+		List<Map.Entry<DomCardName, ArrayList<DomCard>>> buyOptions = new ArrayList<Map.Entry<DomCardName, ArrayList<DomCard>>>(
+				buyOptionsSet);
+		Collections.shuffle(buyOptions);
+
+		for (Map.Entry<DomCardName, ArrayList<DomCard>> entry : buyOptions) {
 			DomCardName cardName = entry.getKey();
 
 			if (checkWhetherBuyable(cardName)) {
-				System.out.println(intro + name + currentPly + " evaluates buying " + cardName);
-				if (currentPly == 0)
-					DomEngine.addToLog(intro + name + currentPly + " evaluates buying " + cardName);
-
+				output(name + currentPly + " evaluates buying " + cardName);
 				DomEngine.haveToLog = false;
+
 				ArrayList<String> decisionTree = new ArrayList<String>();
 				double eval = alphaBeta(cardName, decisionTree);
+
 				if (currentPly == 0)
 					DomEngine.haveToLog = true;
-				System.out.println(intro + "Which scores " + eval + " with " + decisionTree);
-				if (currentPly == 0)
-					DomEngine.addToLog(intro + "Which scores " + eval + " with " + decisionTree);
+				output("Which scores " + eval + " with time complexity " + timeComplexity + " and decision tree "
+						+ decisionTree);
+
 				if (goodGuy && eval > bestEval) {
 					bestEval = eval;
 					bestCard = cardName;
@@ -87,57 +99,25 @@ public class AIDomPlayer extends DomPlayer {
 			}
 		}
 
-		// Not buying any card
-		if (currentPly == 0)
-			DomEngine.addToLog(intro + name + currentPly + " evaluates not buying anything");
-		System.out.println(intro + name + currentPly + " evaluates not buying anything");
-		DomEngine.haveToLog = false;
-		ArrayList<String> decisionTree = new ArrayList<String>();
-		double eval = alphaBeta(null, decisionTree);
-		if (currentPly == 0)
-			DomEngine.haveToLog = true;
-		if (currentPly == 0)
-			DomEngine.addToLog(intro + "Which scores " + eval + " with " + decisionTree);
-		System.out.println(intro + "Which scores " + eval + " with " + decisionTree);
-		if (goodGuy && eval > bestEval) {
-			bestEval = eval;
-			bestCard = null;
-			bestDecisionTree = decisionTree;
-		} else if (!goodGuy && eval < worstEval) {
-			worstEval = eval;
-			bestCard = null;
-			bestDecisionTree = decisionTree;
-		}
+		output(name + currentPly + " decides to buy " + bestCard + ".");
 
 		if (currentPly == 0) {
-			if (bestCard != null) {
-				DomEngine.addToLog(intro + name + currentPly + " decides to buy " + bestCard + ".");
+
+			if (bestCard == DomCardName.NoCard)
+				buysLeft = 0;
+			else
 				continueBuyDecision(bestCard);
-				return 0.0;
-			}
+
+			return 0.0;
+
 		} else {
-			// if (bestCard != null)
-			// DomEngine.addToLog(intro + name + currentPly + " decides to buy " + bestCard
-			// + " in the sub-branch.");
-			// else
-			// DomEngine.addToLog(intro + name + currentPly + " decides not to buy anything
-			// in the sub-branch.");
-			this.setDecisionTree(bestDecisionTree);
-			if (goodGuy) {
+			setDecisionTree(bestDecisionTree);
+
+			if (goodGuy)
 				return bestEval;
-			} else
+			else
 				return worstEval;
 		}
-
-		if (currentPly == 0)
-			DomEngine.addToLog(intro + name + currentPly + " decides to buy NOTHING!");
-
-		// a bit dirty setting buysLeft to 0 to make him stop trying to buy
-		// stuff and
-		// say 'buys nothing'
-		// TODO maybe clean this up
-		buysLeft = 0;
-		return 0.0;
 	}
 
 	private void continueBuyDecision(DomCardName aCard) {
@@ -273,10 +253,18 @@ public class AIDomPlayer extends DomPlayer {
 		}
 	}
 
-	public void continueTurn() {
+	private double continueTurn() {
 		doNightPhase();
-		doCleanUpPhase();
+		double eval = doCleanUpPhase();
+		if (currentPly == 0) {
+			continueContinuingTurn();
+			return 0.0;
+		} else {
+			return eval;
+		}
+	}
 
+	private void continueContinuingTurn() {
 		// actually this is not part of the turn so we set Possessor to null
 		possessor = null;
 		if (donateTriggered)
@@ -293,45 +281,31 @@ public class AIDomPlayer extends DomPlayer {
 	}
 
 	private double alphaBeta(DomCardName buyingCard, ArrayList<String> comingDecisionTree) {
-		AIDomGame nodeGame = new AIDomGame(getCurrentGame());
+		AIDomGame nodeGame = generateNodeGame();
+		AIDomPlayer father = nodeGame.getActiveAIPlayer();
 
-		ArrayList<DomPlayer> originalPlayers = nodeGame.getPlayers();
-		ArrayList<DomPlayer> nodePlayers = new ArrayList<DomPlayer>();
-		AIDomPlayer father = (AIDomPlayer) nodeGame.getActivePlayer();
-
-		for (DomPlayer player : originalPlayers) {
-
+		for (DomPlayer player : nodeGame.getPlayers()) {
 			AIDomPlayer robotizedPlayer = (AIDomPlayer) player;
 
-			if (robotizedPlayer != father)
-				if (currentPly == 0) {
-					robotizedPlayer.setBadGuy();
-				}
-
-			robotizedPlayer.decisionTree.addAll(this.getDecisionTree());
-			if (buyingCard != null) {
-				robotizedPlayer.decisionTree.add(buyingCard.toString() + father.getCurrentPly());
-			} else {
-				robotizedPlayer.decisionTree.add("Nothing" + father.getCurrentPly());
-			}
-			nodePlayers.add(robotizedPlayer);
+			String decision = buyingCard.toString() + father.getCurrentPly();
+			if (goodGuy)
+				decision = "g" + decision;
+			else
+				decision = "b" + decision;
+			robotizedPlayer.decisionTree.add(decision);
 		}
 
-		nodeGame.setPlayers(nodePlayers);
-
-		if (buyingCard != null)
+		if (buyingCard == DomCardName.NoCard) {
+			father.buysLeft = 0;
+		} else
 			father.continueBuyDecision(buyingCard);
 		father.continueBuyPhase(System.currentTimeMillis());
-		father.continueTurn();
 
 		double eval;
-		if (father.currentPly != maxPly) {
-			eval = nodeGame.continueContinuedAIGame();
-			
-			AIDomPlayer robotizedPlayer = (AIDomPlayer) nodeGame.getActivePlayer();
-			comingDecisionTree.addAll(robotizedPlayer.getDecisionTree());
+		if (father.currentPly < maxPly) {
+			eval = father.continueTurn();
+			comingDecisionTree.addAll(nodeGame.getActiveAIPlayer().getDecisionTree());
 		} else {
-			
 			eval = nodeGame.computeHeuristics();
 			comingDecisionTree.addAll(father.getDecisionTree());
 		}
@@ -339,8 +313,136 @@ public class AIDomPlayer extends DomPlayer {
 		return eval;
 	}
 
-	private void increasePly() {
-		currentPly++;
+	/**
+	 * @param nCardsToDraw
+	 */
+	public double drawCards(int nCardsToDraw) {
+		if (minusOneCardToken) {
+			nCardsToDraw--;
+			minusOneCardToken = false;
+		}
+
+		if (currentPly == 0) {
+			ArrayList<DomCard> theDrawnCards = deck.getTopCards(nCardsToDraw);
+			cardsInHand.addAll(theDrawnCards);
+
+			output(this + " draws " + theDrawnCards.size() + " cards");
+			showHand();
+			return 0.0;
+		} else {
+
+			if (deck.getDrawDeck().size() < nCardsToDraw)
+				if (!handleShuffling(nCardsToDraw)) {
+					continueCleanUpPhase();
+					continueContinuingTurn();
+					return getCurrentAIGame().continueContinuedAIGame();
+				}
+
+			output(name + " at ply " + currentPly + " (drawing ply).");
+
+			if (currentPly + 3 < maxPly) {
+				setKnownTopCards(getKnownTopCards() - nCardsToDraw);
+				EnumMap<DomCardName, Integer> drawDeckMap = arraylistToEnumset(deck.getDrawDeck());
+				Set<EnumMap<DomCardName, Integer>> drawingCombinations = getDrawingCombinations(nCardsToDraw,
+						drawDeckMap);
+
+				double aggEval = 0;
+				for (EnumMap<DomCardName, Integer> hand : drawingCombinations) {
+
+					double probability = 1.0 / binomialCoefficient(deck.getDrawDeckSize(), nCardsToDraw);
+
+					for (DomCardName cardName : hand.keySet())
+						probability *= binomialCoefficient(drawDeckMap.get(cardName), hand.get(cardName));
+
+					AIDomGame nodeGame = generateNodeGame();
+					AIDomPlayer father = nodeGame.getActiveAIPlayer();
+
+					output(this + " draws " + hand + ", with probability " + probability);
+
+					father.getHandSetFromDeck(hand);
+					father.continueCleanUpPhase();
+					father.continueContinuingTurn();
+
+					aggEval += probability * nodeGame.continueContinuedAIGame();
+
+					output("Which scores " + aggEval);
+				}
+
+				return aggEval;
+
+			} else if (currentPly + 1 < maxPly) {
+				// The cards drawn here will not be used, since there won't be another buying
+				// phase for this playeroutput("The cards here won't be used");
+				for (DomPlayer player : getCurrentGame().getPlayers()) {
+					AIDomPlayer robotizedPlayer = (AIDomPlayer) player;
+					robotizedPlayer.increasePly();
+				}
+				return getCurrentAIGame().continueContinuedAIGame();
+			} else {
+				// The cards drawn here will not be used, since there won't be another buying
+				// phase for this player
+				output("Reached last ply = " + (currentPly + 1));
+				return getCurrentAIGame().computeHeuristics();
+			}
+
+		}
+	}
+
+	@Override
+	protected double drawHandForNextTurn() {
+		for (DomCard theCard : cardsInPlay)
+			if (theCard.getName() == DomCardName.Outpost)
+				return drawCards(3);
+
+		return drawCards(5);
+		// TODO: Handle expeditions and rivers gift
+		// for (int i=0;i<expeditionsActivated;i++)
+		// drawCards(2);
+		// if(river$sGiftActive)
+		// drawCards(1);
+	}
+
+	@Override
+	protected double doCleanUpPhase() {
+		setPhase(DomPhase.CleanUp);
+		while (!boons.isEmpty())
+			getCurrentGame().getBoard().returnBoon(boons.remove(0));
+
+		for (DomCard theEncampment : mySetAsideEncampments)
+			returnToSupply(theEncampment);
+
+		mySetAsideEncampments.clear();
+		cardsToStayInPlay.clear();
+		handleHerbalists();
+		handleSchemes();
+		discardAll();
+		discard(deck.getPutAsideCards());
+
+		double eval = drawHandForNextTurn();
+
+		if (currentPly == 0) {
+			continueCleanUpPhase();
+			return 0.0;
+		} else
+			return eval;
+	}
+
+	private void continueCleanUpPhase() {
+		if (savedCard != null)
+			cardsInHand.add(savedCard);
+		savedCard = null;
+		setPhase(null);
+		// reset variables needed for total money checking in other player's turns
+		availableCoins = 0;
+		availablePotions = 0;
+		if (getCardsGainedLastTurn().isEmpty() && getCurrentGame().getBoard().isLandmarkActive(DomCardName.Baths)) {
+			int theVP = getCurrentGame().getBoard().removeVPFrom(DomCardName.Baths, 2);
+			if (theVP > 0) {
+				if (DomEngine.haveToLog)
+					DomEngine.addToLog(this + " takes VP from " + DomCardName.Baths.toHTML());
+				addVP(theVP);
+			}
+		}
 	}
 
 	private void displayBoard() {
@@ -356,18 +458,6 @@ public class AIDomPlayer extends DomPlayer {
 		}
 
 		System.out.println(board);
-	}
-
-	private void setNotHuman() {
-		isHuman = false;
-	}
-
-	public boolean getNature() {
-		return goodGuy;
-	}
-
-	private void setBadGuy() {
-		goodGuy = false;
 	}
 
 	private boolean checkWhetherBuyable(DomCardName cardName) {
@@ -389,7 +479,7 @@ public class AIDomPlayer extends DomPlayer {
 		}
 
 		if (!hasExtraMissionTurn()) {
-			if (game.countInSupply(cardName) == 0) {
+			if (game.countInSupply(cardName) == 0 && cardName != DomCardName.NoCard) {
 				if (DomEngine.haveToLog)
 					DomEngine.addToLog(cardName + " is no more available to buy");
 				return false;
@@ -417,6 +507,111 @@ public class AIDomPlayer extends DomPlayer {
 		return false;
 	}
 
+	private AIDomGame generateNodeGame() {
+		AIDomGame nodeGame = new AIDomGame(getCurrentGame());
+
+		ArrayList<DomPlayer> originalPlayers = nodeGame.getPlayers();
+		ArrayList<DomPlayer> nodePlayers = new ArrayList<DomPlayer>();
+		AIDomPlayer father = (AIDomPlayer) nodeGame.getActivePlayer();
+
+		for (DomPlayer player : originalPlayers) {
+
+			AIDomPlayer robotizedPlayer = (AIDomPlayer) player;
+
+			if (robotizedPlayer != father)
+				if (currentPly == 0) {
+					robotizedPlayer.setBadGuy();
+					timeComplexity = 0;
+				}
+
+			robotizedPlayer.decisionTree.addAll(this.getDecisionTree());
+			robotizedPlayer.increasePly();
+			nodePlayers.add(robotizedPlayer);
+		}
+		nodeGame.setPlayers(nodePlayers);
+
+		timeComplexity++;
+		return nodeGame;
+	}
+
+	private void output(String aString) {
+		String intro = new String(new char[currentPly]).replace("\0", "x ");
+		if (currentPly <= outputLevel)
+			System.out.println(intro + aString);
+		if (currentPly == 0)
+			DomEngine.addToLog(aString);
+	}
+
+	private void getHandSetFromDeck(EnumMap<DomCardName, Integer> hand) {
+		for (DomCardName aCardName : hand.keySet()) {
+			int amount = hand.get(aCardName);
+			for (DomCard aCard : deck.getDrawDeck())
+				if (aCard.getName() == aCardName) {
+					cardsInHand.add(aCard);
+					amount--;
+					if (amount == 0)
+						break;
+				}
+			for (DomCard aCard : cardsInHand)
+				deck.getDrawDeck().remove(aCard);
+			if (amount != 0)
+				try {
+					throw new Exception("DrawCardsException: Some drawing cards not found");
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+		}
+		showHand();
+	}
+
+	private Set<EnumMap<DomCardName, Integer>> getDrawingCombinations(int aI, EnumMap<DomCardName, Integer> diffCards) {
+		output("Different cards in deck: " + diffCards);
+
+		Combination combinator = new Combination(diffCards, aI);
+		Set<EnumMap<DomCardName, Integer>> combinationsSet = combinator.combinations();
+
+		output(combinationsSet.size() + " possible combinations to draw: " + combinationsSet);
+		output("Number of branches = " + combinationsSet.size());
+		return combinationsSet;
+	}
+
+	private static final EnumMap<DomCardName, Integer> arraylistToEnumset(ArrayList<DomCard> arrayList) {
+		EnumMap<DomCardName, Integer> diffCards = new EnumMap<DomCardName, Integer>(DomCardName.class);
+		for (DomCard card : arrayList)
+			if (!diffCards.containsKey(card.getName()))
+				diffCards.put(card.getName(), 1);
+			else
+				diffCards.put(card.getName(), diffCards.get(card.getName()) + 1);
+		return diffCards;
+	}
+
+	private boolean handleShuffling(int nCardsToDraw) {
+		ArrayList<DomCard> drawDeck = deck.getDrawDeck();
+		setKnownTopCards(getKnownTopCards() - drawDeck.size());
+
+		if (drawDeck.size() > 0) {
+			for (DomCard aCard : drawDeck)
+				cardsInHand.add(aCard);
+			for (DomCard aCard : cardsInHand)
+				drawDeck.remove(aCard);
+		}
+
+		if (deck.getDiscardPile().isEmpty()) {
+			return false;
+		} else {
+			drawDeck.addAll(deck.getDiscardPile());
+			deck.getDiscardPile().clear();
+			deck.shuffle();
+			nCardsToDraw -= drawDeck.size();
+		}
+		return true;
+	}
+
+	private void increasePly() {
+		currentPly++;
+	}
+
 	public int getCurrentPly() {
 		return currentPly;
 	}
@@ -425,11 +620,92 @@ public class AIDomPlayer extends DomPlayer {
 		this.currentPly = currentPly;
 	}
 
+	public AIDomGame getCurrentAIGame() {
+		return (AIDomGame) getCurrentGame();
+	}
+
+	private void setNotHuman() {
+		isHuman = false;
+	}
+
+	public boolean getNature() {
+		return goodGuy;
+	}
+
+	private void setBadGuy() {
+		goodGuy = false;
+	}
+
 	public ArrayList<String> getDecisionTree() {
 		return decisionTree;
 	}
 
 	public void setDecisionTree(ArrayList<String> decisionTree) {
 		this.decisionTree = decisionTree;
+	}
+
+	/**
+	 * Returns an exact representation of the
+	 * <a href="http://mathworld.wolfram.com/BinomialCoefficient.html"> Binomial
+	 * Coefficient</a>, "{@code n choose k}", the number of {@code k}-element
+	 * subsets that can be selected from an {@code n}-element set.
+	 * <p>
+	 * <Strong>Preconditions</strong>:
+	 * <ul>
+	 * <li>{@code 0 <= k <= n } (otherwise {@code MathIllegalArgumentException} is
+	 * thrown)</li>
+	 * <li>The result is small enough to fit into a {@code long}. The largest value
+	 * of {@code n} for which all coefficients are {@code  < Long.MAX_VALUE} is 66.
+	 * If the computed value exceeds {@code Long.MAX_VALUE} a
+	 * {@code MathArithMeticException} is thrown.</li>
+	 * </ul>
+	 * </p>
+	 *
+	 * @param n
+	 *            the size of the set
+	 * @param k
+	 *            the size of the subsets to be counted
+	 * @return {@code n choose k}
+	 * @throws NotPositiveException
+	 *             if {@code n < 0}.
+	 * @throws NumberIsTooLargeException
+	 *             if {@code k > n}.
+	 * @throws MathArithmeticException
+	 *             if the result is too large to be represented by a long integer.
+	 */
+	public static long binomialCoefficient(final int n, final int k) {
+		if ((n == k) || (k == 0)) {
+			return 1;
+		}
+		if ((k == 1) || (k == n - 1)) {
+			return n;
+		}
+		// Use symmetry for large k
+		if (k > n / 2) {
+			return binomialCoefficient(n, n - k);
+		}
+
+		// We use the formula
+		// (n choose k) = n! / (n-k)! / k!
+		// (n choose k) == ((n-k+1)*...*n) / (1*...*k)
+		// which could be written
+		// (n choose k) == (n-1 choose k-1) * n / k
+		long result = 1;
+		if (n <= 61) {
+			// For n <= 61, the naive implementation cannot overflow.
+			int i = n - k + 1;
+			for (int j = 1; j <= k; j++) {
+				result = result * i / j;
+				i++;
+			}
+		} else {
+			try {
+				throw new Exception("BinomialException: Number too big");
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		return result;
 	}
 }

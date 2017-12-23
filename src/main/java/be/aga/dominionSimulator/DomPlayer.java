@@ -38,9 +38,9 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
     private EnumMap<DomCardName, DomPlayStrategy> playStrategies = new EnumMap<DomCardName, DomPlayStrategy>(DomCardName.class);
     private String[] keywords = null;
 
-    private DomDeck deck = new DomDeck(this);
-    private ArrayList<DomCard> cardsInPlay = new ArrayList<DomCard>();
-    private ArrayList<DomCard> cardsInHand = new ArrayList<DomCard>();
+    protected DomDeck deck = new DomDeck(this);
+    protected ArrayList<DomCard> cardsInPlay = new ArrayList<DomCard>();
+    protected ArrayList<DomCard> cardsInHand = new ArrayList<DomCard>();
     private ArrayList<DomCard> nativeVillageMat = new ArrayList<DomCard>();
     public ArrayList<DomCard> horseTradersPile = new ArrayList<DomCard>();
     private ArrayList<DomCard> cardsToSummon = new ArrayList<DomCard>();
@@ -48,7 +48,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
     protected String name;
     public int actionsLeft=1;
     protected int buysLeft;
-    private int availableCoins = 0;
+    protected int availableCoins = 0;
     public int availablePotions = 0;
     protected DomGame game;
     private int wins = 0;
@@ -79,7 +79,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
     private String description = "No description available";
     private String author = "Anonymous";
     private DomPhase currentPhase = null;
-    private ArrayList<DomCard> cardsToStayInPlay = new ArrayList<DomCard>();
+    protected ArrayList<DomCard> cardsToStayInPlay = new ArrayList<DomCard>();
     private int knownTopCards = 0;
     private StartState myStartState = null;
     private ArrayList<DomCardName> mySuggestedBoardCards = new ArrayList<DomCardName>();
@@ -87,7 +87,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
     protected int coinTokens;
     private boolean journeyTokenIsFaceUp;
     private ArrayList<DomCard> tavernMat = new ArrayList<DomCard>();
-    private boolean minusOneCardToken;
+    protected boolean minusOneCardToken;
     private DomCardName plusOneBuyTokenOn;
     private ArrayList<DomCard> princedCards = new ArrayList<DomCard>();
     private boolean minusOneCoinToken;
@@ -97,7 +97,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
     private boolean pilgrimageActivatedThisTurn;
     private boolean almsActivated;
     private boolean saveActivated;
-    private int expeditionsActivated;
+    protected int expeditionsActivated;
     private DomCardName minus$2TokenOn;
     private DomCard estateTokenOn;
     protected int coinTokensToAdd;
@@ -108,21 +108,21 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
     protected int debt;
     private boolean hasDoubledMoney;
     private int charmReminder = 0;
-    private ArrayList<DomCard> mySetAsideEncampments = new ArrayList<DomCard>();
+    protected ArrayList<DomCard> mySetAsideEncampments = new ArrayList<DomCard>();
     protected boolean donateTriggered;
     private int mountainPassBid = 0;
     private DomCardName obeliskChoice = null;
     private boolean villaTriggered = false;
     private int merchantsPlayed;
     private int drawDeckSize;
-    private DomCard savedCard;
+    protected DomCard savedCard;
     protected boolean isHuman;
     private DomEngine myEngine;
     private char[] tavernMatAsString;
     private ArrayList<DomCard> beginningOfTurnTriggers=new ArrayList<DomCard>();
     private boolean shelters=false;
-    private ArrayList<DomCard> boons = new ArrayList<DomCard>();
-    private boolean river$sGiftActive=false;
+    protected ArrayList<DomCard> boons = new ArrayList<DomCard>();
+    protected boolean river$sGiftActive=false;
     private ArrayList<DomCard> delayedBoons = new ArrayList<DomCard>();
 
     public DomPlayer(String aString) {
@@ -513,8 +513,9 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
 
     /**
      * @param aI
+     * @return 
      */
-    public void drawCards(int aI) {
+    public double drawCards(int aI) {
         if (minusOneCardToken) {
             aI--;
             minusOneCardToken = false;
@@ -523,6 +524,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
         cardsInHand.addAll(theDrawnCards);
         if (DomEngine.haveToLog) DomEngine.addToLog(this + " draws " + theDrawnCards.size() + " cards");
         showHand();
+        return 0.0;
     }
 
     /**
@@ -666,7 +668,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
         }
     }
 
-    protected void doCleanUpPhase() {
+    protected double doCleanUpPhase() {
         setPhase(DomPhase.CleanUp);
         while (!boons.isEmpty()) {
             getCurrentGame().getBoard().returnBoon(boons.remove(0));
@@ -695,6 +697,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
                 addVP(theVP);
             }
         }
+        return 0.0;
     }
 
     public void showBeginningOfTurnLog() {
@@ -730,11 +733,11 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
         horseTradersPile.clear();
     }
 
-    private void drawHandForNextTurn() {
+    protected double drawHandForNextTurn() {
         for (DomCard theCard : cardsInPlay) {
             if (theCard.getName() == DomCardName.Outpost) {
                 drawCards(3);
-                return;
+                return 0.0;
             }
         }
         drawCards(5);
@@ -742,6 +745,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
             drawCards(2);
         if(river$sGiftActive)
             drawCards(1);
+        return 0.0;
     }
 
     /**
@@ -794,7 +798,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
         cardsInPlay.addAll(cardsToStayInPlay);
     }
 
-    private void handleSchemes() {
+    protected void handleSchemes() {
         //TODO maybe rethink this
         Collections.sort(cardsInPlay, DomCard.SORT_FOR_DISCARDING);
         for (DomCard theCard : cardsInPlay) {
@@ -804,7 +808,7 @@ public class DomPlayer extends Observable implements Comparable<DomPlayer> {
         }
     }
 
-    private void handleHerbalists() {
+    protected void handleHerbalists() {
         //kind of looks dirty to handle Herbalist but
         //concurrent array modifications are annoying
         Collections.sort(cardsInPlay, DomCard.SORT_FOR_DISCARDING);

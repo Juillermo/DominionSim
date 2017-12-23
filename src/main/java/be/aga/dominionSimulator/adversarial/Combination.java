@@ -1,60 +1,91 @@
 package be.aga.dominionSimulator.adversarial;
 
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import be.aga.dominionSimulator.enums.DomCardName;
+
 public class Combination {
-	 
-public static void combination(Object[]  elements, int K){
- 
-        // get the length of the array
-        // e.g. for {'A','B','C','D'} => N = 4 
-        int N = elements.length;
-         
-        if(K > N){
-            System.out.println("Invalid input, K > N");
-            return;
-        }
-        // calculate the possible combinations
-        // e.g. c(4,2)
-        c(N,K);
-         
-        // get the combination by index 
-        // e.g. 01 --> AB , 23 --> CD
-        int combination[] = new int[K];
-         
-        // position of current index
-        //  if (r = 1)              r*
-        //  index ==>        0   |   1   |   2
-        //  element ==>      A   |   B   |   C
-        int r = 0;      
-        int index = 0;
-         
-        while(r >= 0){
-            // possible indexes for 1st position "r=0" are "0,1,2" --> "A,B,C"
-            // possible indexes for 2nd position "r=1" are "1,2,3" --> "B,C,D"
-             
-            // for r = 0 ==> index < (4+ (0 - 2)) = 2
-            if(index <= (N + (r - K))){
-                    combination[r] = index;
-                     
-                // if we are at the last position print and increase the index
-                if(r == K-1){
- 
-                    //do something with the combination e.g. add to list or print
-                    print(combination, elements);
-                    index++;                
-                }
-                else{
-                    // select index for next position
-                    index = combination[r]+1;
-                    r++;                                        
-                }
-            }
-            else{
-                r--;
-                if(r > 0)
-                    index = combination[r]+1;
-                else
-                    index = combination[0]+1;   
-            }           
-        }
-    }
+
+	private EnumMap<DomCardName, Integer> cardsMap;
+	private int r;
+	private Set<EnumMap<DomCardName, Integer>> solution = new HashSet<EnumMap<DomCardName, Integer>>();
+	private ArrayList<DomCardName> result = new ArrayList<DomCardName>();
+
+	public Combination(EnumMap<DomCardName, Integer> cardsMap, int r) {
+		this.cardsMap = cardsMap;
+		this.r = r;
+		for (int i = 0; i < r; i++)
+			result.add(null);
+	}
+
+	public Set<EnumMap<DomCardName, Integer>> combinations() {
+		subcombinations(new ArrayList<DomCardName>(cardsMap.keySet()), 0);
+		return solution;
+	}
+
+	private void subcombinations(List<DomCardName> options, int index_r) {
+		// if (r < index_r) {
+		// ArrayList<DomCardName> newResult = new ArrayList<DomCardName>();
+		// for (DomCardName item : result)
+		// newResult.add(item);
+		// set.add(newResult);
+		// return;
+		// }
+
+		for (int i = index_r; i <= r; i++) {
+			if (i > index_r)
+				result.set(i - 1, options.get(0));
+			if (options.size() > 1) {
+				subcombinations(options.subList(1, options.size()), i);
+			} else if (options.size() == 1) {
+				fillWith(options.get(0), i);
+				return;
+			} else {
+				try {
+					throw new Exception("Combinations: no options available");
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+
+		fillWith(options.get(0), index_r);
+		return;
+		// for (int i = 0; i < options.length; i++){
+		// result[result.length - r] = options[i];
+		// subcombinations(options, r-1, result, set);
+		// }
+	}
+
+	private void fillWith(DomCardName option, int index) {
+		ArrayList<DomCardName> newResult = new ArrayList<DomCardName>();
+		for (DomCardName item : result)
+			newResult.add(item);
+
+		for (int i = index + 1; i <= r; i++)
+			newResult.set(i - 1, option);
+		
+		for(DomCardName cardName : cardsMap.keySet()) {
+			int count = 0;
+			for(DomCardName cardNameResult : newResult) {
+				if(cardName == cardNameResult)
+					count++;
+			}
+			if(count > cardsMap.get(cardName)) return;
+		}
+		
+		EnumMap<DomCardName, Integer> diffCards1 = new EnumMap<DomCardName, Integer>(DomCardName.class);
+		for (DomCardName card : newResult)
+			if (!diffCards1.containsKey(card))
+				diffCards1.put(card, 1);
+			else
+				diffCards1.put(card, diffCards1.get(card) + 1);
+		
+		solution.add(diffCards1);
+	}
 }
