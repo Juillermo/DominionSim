@@ -21,11 +21,11 @@ import be.aga.dominionSimulator.cards.Mountain_PassCard;
  */
 public class AIDomPlayer extends DomPlayer {
 	private int currentPly = 0;
-	private static final int maxPly = 5; // Each drawing process and buying decision by each player adds a ply
+	private static final int maxPly = 7; // Each drawing process and buying decision by each player adds a ply
 	private boolean goodGuy = true;
 	private ArrayList<String> decisionTree = new ArrayList<String>();
 	private static int timeComplexity;
-	private static int outputLevel = 5;
+	private static int outputLevel = 7;
 
 	static final long[] FACTORIALS = new long[] { 1l, 1l, 2l, 6l, 24l, 120l, 720l, 5040l, 40320l, 362880l, 3628800l,
 			39916800l, 479001600l, 6227020800l, 87178291200l, 1307674368000l, 20922789888000l, 355687428096000l,
@@ -52,7 +52,6 @@ public class AIDomPlayer extends DomPlayer {
 
 	@Override
 	public double makeBuyDecision() {
-
 		output(name + " at ply " + currentPly + " (buying ply), with $" + availableCoins + " to spend.");
 
 		EnumMap<DomCardName, ArrayList<DomCard>> board = getCurrentGame().getBoard().clone();
@@ -64,18 +63,40 @@ public class AIDomPlayer extends DomPlayer {
 		ArrayList<DomCard> noCards = new ArrayList<DomCard>();
 		noCards.add(new DomCard(DomCardName.NoCard));
 		board.put(DomCardName.NoCard, noCards);
-		Set<Map.Entry<DomCardName, ArrayList<DomCard>>> buyOptionsSet = board.entrySet();
+		
+		Set<DomCardName> buyOptionsSet = board.keySet();
+		buyOptionsSet.remove(DomCardName.Curse);
 
-		// Randomize cards to buy, for (potentially) more efficient alphaBeta algorithm
-		// TODO Sort them by ranking of how good they are (by cost?)
-		List<Map.Entry<DomCardName, ArrayList<DomCard>>> buyOptions = new ArrayList<Map.Entry<DomCardName, ArrayList<DomCard>>>(
-				buyOptionsSet);
-		Collections.shuffle(buyOptions);
+		for (DomCardName cardName : buyOptionsSet)
+			if (!checkWhetherBuyable(cardName))
+				buyOptionsSet.remove(cardName);
+		
+		if (buyOptionsSet.contains(DomCardName.Province)) {
+			output(name + currentPly + " evaluates buying " + DomCardName.Province);
+			DomEngine.haveToLog = false;
+			
+			if (currentPly != 0) {
+				bestEval = alphaBeta(DomCardName.Province, bestDecisionTree);
+				worstEval = bestEval;
+			}
+			bestCard = DomCardName.Province;
+			
+			if (currentPly == 0)
+				DomEngine.haveToLog = true;
+			output("Which scores " + bestEval + " with time complexity " + timeComplexity + " and decision tree "
+					+ decisionTree);
+			
+		} else {
+			
+			if (buyOptionsSet.contains(DomCardName.Silver))
+				buyOptionsSet.remove(DomCardName.Copper);
+			if (buyOptionsSet.contains(DomCardName.Gold))
+				buyOptionsSet.remove(DomCardName.Silver);
 
-		for (Map.Entry<DomCardName, ArrayList<DomCard>> entry : buyOptions) {
-			DomCardName cardName = entry.getKey();
+			if (buyOptionsSet.contains(DomCardName.Duchy))
+				buyOptionsSet.remove(DomCardName.Estate);
 
-			if (checkWhetherBuyable(cardName)) {
+			for (DomCardName cardName : buyOptionsSet) {
 				output(name + currentPly + " evaluates buying " + cardName);
 				DomEngine.haveToLog = false;
 
@@ -372,7 +393,8 @@ public class AIDomPlayer extends DomPlayer {
 
 			} else if (currentPly + 1 < maxPly) {
 				// The cards drawn here will not be used, since there won't be another buying
-				// phase for this playeroutput("The cards here won't be used");
+				// phase for this player
+				output("The cards here won't be used");
 				for (DomPlayer player : getCurrentGame().getPlayers()) {
 					AIDomPlayer robotizedPlayer = (AIDomPlayer) player;
 					robotizedPlayer.increasePly();
@@ -469,8 +491,6 @@ public class AIDomPlayer extends DomPlayer {
 		if (theCost == null)
 			return false;
 		if (getTotalAvailableCurrency().compareButIgnoreDebtTo(theCost) < 0)
-			return false;
-		if (cardName == DomCardName.Curse || cardName == DomCardName.Copper)
 			return false;
 
 		if (cardName.hasCardType(DomCardType.Event)) {
